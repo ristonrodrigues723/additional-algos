@@ -3,130 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Tree BFS Visualization</title>
+    <title>Enhanced Tree Traversal Visualization</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #f0f0f0;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
         }
         #tree {
-            margin: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+            overflow: hidden;
         }
-        .node {
-            fill: #4CAF50;
-            stroke: #45a049;
+        .node circle {
+            fill: #3498db;
+            stroke: #2980b9;
             stroke-width: 2;
             cursor: pointer;
-            transition: fill 0.3s;
+            transition: all 0.3s ease;
         }
         .node text {
             fill: white;
             font-size: 14px;
+            font-weight: bold;
             text-anchor: middle;
             dominant-baseline: central;
             pointer-events: none;
         }
-        .node.visited {
-            fill: #FF5722;
-            stroke: #E64A19;
+        .node.visited circle {
+            fill: #e74c3c;
+            stroke: #c0392b;
+        }
+        .node:hover circle {
+            fill: #f39c12;
+            stroke: #d35400;
         }
         .link {
             fill: none;
-            stroke: #999;
+            stroke: #bdc3c7;
             stroke-width: 2;
         }
-        #controls, #queue {
-            margin: 20px;
+        #controls, #treeInput {
             display: flex;
             gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
         }
-        button {
+        button, select {
             padding: 10px 15px;
             font-size: 16px;
             cursor: pointer;
-            background-color: #008CBA;
+            background-color: #3498db;
             color: white;
             border: none;
             border-radius: 5px;
             transition: background-color 0.3s;
         }
-        button:hover {
-            background-color: #007B9A;
+        button:hover, select:hover {
+            background-color: #2980b9;
         }
         button:disabled {
-            background-color: #cccccc;
+            background-color: #95a5a6;
             cursor: not-allowed;
         }
         #queue {
             background-color: white;
-            padding: 10px;
-            border-radius: 5px;
+            padding: 15px;
+            border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
         }
         .queue-item {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            line-height: 30px;
-            text-align: center;
-            background-color: #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: #3498db;
             color: white;
             border-radius: 50%;
-            margin-right: 5px;
+            font-weight: bold;
         }
-        .node:hover circle {
-    fill: #FFC107;
-    stroke: #FFA000;
-}
+        #nodeInfo {
+            position: absolute;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+            font-size: 14px;
+        }
+        #treeData {
+            width: 100%;
+            max-width: 400px;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-family: monospace;
+            resize: vertical;
+        }
     </style>
 </head>
 <body>
-    <h1>Tree Breadth-First Search Visualization</h1>
+    <h1>Tree Traversal Visualization</h1>
     <div id="treeInput">
         <textarea id="treeData" rows="5" cols="50">
-    {
-        "value": 1,
-        "children": [
-            {"value": 2, "children": [{"value": 4}, {"value": 5}]},
-            {"value": 3, "children": [{"value": 6}, {"value": 7}]}
-        ]
-    }
+{
+    "value": 1,
+    "children": [
+        {"value": 2, "children": [{"value": 4}, {"value": 5}]},
+        {"value": 3, "children": [{"value": 6}, {"value": 7}]}
+    ]
+}
         </textarea>
         <button id="updateTreeButton">Update Tree</button>
     </div>
     <div id="tree"></div>
     <div id="controls">
-        <button id="startButton">Start BFS</button>
+        <select id="algorithmSelect">
+            <option value="bfs">Breadth-First Search</option>
+            <option value="dfs">Depth-First Search</option>
+        </select>
+        <button id="startButton">Start Traversal</button>
         <button id="nextButton" disabled>Next Step</button>
         <button id="prevButton" disabled>Previous Step</button>
         <button id="resetButton">Reset</button>
     </div>
-    <select id="algorithmSelect">
-        <option value="bfs">Breadth-First Search</option>
-        <option value="dfs">Depth-First Search</option>
-    </select>
     <div id="queue"></div>
-    <div id="nodeInfo" style="position: absolute; padding: 10px; background-color: white; border: 1px solid #ccc; display: none;"></div>
+    <div id="nodeInfo"></div>
+
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
-        class TreeNode {
-            constructor(value) {
-                this.value = value;
-                this.children = [];
-            }
-        }
-
-        const root = new TreeNode(1);
-        root.children.push(new TreeNode(2));
-        root.children.push(new TreeNode(3));
-        root.children[0].children.push(new TreeNode(4));
-        root.children[0].children.push(new TreeNode(5));
-        root.children[1].children.push(new TreeNode(6));
-        root.children[1].children.push(new TreeNode(7));
-
         const width = 600;
         const height = 400;
         const nodeRadius = 20;
@@ -141,34 +166,51 @@
 
         const treeLayout = d3.tree().size([width - 40, height - 40]);
 
-        const root_d3 = d3.hierarchy(root);
-        treeLayout(root_d3);
-
-        const links = g.selectAll(".link")
-            .data(root_d3.links())
-            .enter().append("path")
-            .attr("class", "link")
-            .attr("d", d3.linkVertical()
-                .x(d => d.x)
-                .y(d => d.y));
-
-        const nodes = g.selectAll(".node")
-            .data(root_d3.descendants())
-            .enter().append("g")
-            .attr("class", "node")
-            .attr("transform", d => `translate(${d.x},${d.y})`);
-
-        nodes.append("circle")
-            .attr("r", nodeRadius);
-
-        nodes.append("text")
-            .text(d => d.data.value);
-
+        let root, links, nodes;
         let bfsSteps = [];
         let currentStep = -1;
 
+        function updateTree() {
+            const treeData = JSON.parse(d3.select("#treeData").property("value"));
+            root = d3.hierarchy(treeData);
+            treeLayout(root);
+
+            // Update links
+            links = g.selectAll(".link")
+                .data(root.links(), d => d.target.data.value);
+
+            links.exit().remove();
+            
+            links.enter().append("path")
+                .attr("class", "link")
+                .merge(links)
+                .attr("d", d3.linkVertical()
+                    .x(d => d.x)
+                    .y(d => d.y));
+
+            // Update nodes
+            nodes = g.selectAll(".node")
+                .data(root.descendants(), d => d.data.value);
+
+            nodes.exit().remove();
+
+            const newNodes = nodes.enter().append("g")
+                .attr("class", "node");
+
+            newNodes.append("circle")
+                .attr("r", nodeRadius);
+
+            newNodes.append("text")
+                .text(d => d.data.value);
+
+            nodes = newNodes.merge(nodes)
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+
+            reset();
+        }
+
         function bfs() {
-            const queue = [root];
+            const queue = [root.data];
             const visited = new Set();
             bfsSteps = [];
 
@@ -177,27 +219,37 @@
                 if (!visited.has(node)) {
                     visited.add(node);
                     bfsSteps.push({node, queue: [...queue]});
-                    queue.push(...node.children);
+                    queue.push(...(node.children || []));
                 }
             }
         }
 
+        function dfs(node, visited = new Set(), steps = []) {
+            if (!node || visited.has(node)) return steps;
+            visited.add(node);
+            steps.push({node, queue: Array.from(visited)});
+            for (const child of (node.children || [])) {
+                dfs(child, visited, steps);
+            }
+            return steps;
+        }
+
         function updateVisualization() {
-    const step = bfsSteps[currentStep];
-    nodes.classed("visited", false);
-    nodes.filter(d => bfsSteps.slice(0, currentStep + 1).some(s => s.node === d.data))
-        .classed("visited", true)
-        .each(function(d) {
-            d3.select(this).select("circle")
-                .transition()
-                .duration(500)
-                .attr("r", nodeRadius * 1.2)
-                .transition()
-                .duration(500)
-                .attr("r", nodeRadius);
-        });
-    updateQueue(step.queue);
-}
+            const step = bfsSteps[currentStep];
+            nodes.classed("visited", false);
+            nodes.filter(d => bfsSteps.slice(0, currentStep + 1).some(s => s.node === d.data))
+                .classed("visited", true)
+                .each(function(d) {
+                    d3.select(this).select("circle")
+                        .transition()
+                        .duration(500)
+                        .attr("r", nodeRadius * 1.2)
+                        .transition()
+                        .duration(500)
+                        .attr("r", nodeRadius);
+                });
+            updateQueue(step.queue);
+        }
 
         function updateQueue(queue) {
             const queueContainer = d3.select("#queue");
@@ -238,98 +290,44 @@
             d3.select("#startButton").property("disabled", false);
         }
 
-        d3.select("#startButton").on("click", () => {
-            bfs();
+        function runTraversal() {
+            const algorithm = d3.select("#algorithmSelect").property("value");
+            if (algorithm === "bfs") {
+                bfs();
+            } else if (algorithm === "dfs") {
+                bfsSteps = dfs(root.data);
+            }
+            currentStep = -1;
             d3.select("#startButton").property("disabled", true);
             d3.select("#nextButton").property("disabled", false);
             nextStep();
-        });
+        }
 
+        d3.select("#startButton").on("click", runTraversal);
         d3.select("#nextButton").on("click", nextStep);
         d3.select("#prevButton").on("click", prevStep);
         d3.select("#resetButton").on("click", reset);
+        d3.select("#updateTreeButton").on("click", updateTree);
 
         const zoom = d3.zoom()
-    .scaleExtent([0.5, 3])
-    .on("zoom", (event) => {
-        g.attr("transform", event.transform);
-    });
+            .scaleExtent([0.5, 3])
+            .on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            });
 
-svg.call(zoom);
-nodes.on("mouseover", (event, d) => {
-    const nodeInfo = d3.select("#nodeInfo");
-    nodeInfo.style("display", "block")
-        .style("left", (event.pageX + 10) + "px")
-        .style("top", (event.pageY + 10) + "px")
-        .html(`Value: ${d.data.value}<br>Depth: ${d.depth}<br>Children: ${d.children ? d.children.length : 0}`);
-}).on("mouseout", () => {
-    d3.select("#nodeInfo").style("display", "none");
-});
+        svg.call(zoom);
 
-function updateTree() {
-    const treeData = JSON.parse(d3.select("#treeData").property("value"));
-    root = d3.hierarchy(treeData);
-    treeLayout(root);
+        nodes.on("mouseover", (event, d) => {
+            const nodeInfo = d3.select("#nodeInfo");
+            nodeInfo.style("display", "block")
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY + 10) + "px")
+                .html(`Value: ${d.data.value}<br>Depth: ${d.depth}<br>Children: ${d.children ? d.children.length : 0}`);
+        }).on("mouseout", () => {
+            d3.select("#nodeInfo").style("display", "none");
+        });
 
-    // Update links
-    links = g.selectAll(".link")
-        .data(root.links(), d => d.target.data.value);
-
-    links.exit().remove();
-    
-    links.enter().append("path")
-        .attr("class", "link")
-        .merge(links)
-        .attr("d", d3.linkVertical()
-            .x(d => d.x)
-            .y(d => d.y));
-
-    // Update nodes
-    nodes = g.selectAll(".node")
-        .data(root.descendants(), d => d.data.value);
-
-    nodes.exit().remove();
-
-    const newNodes = nodes.enter().append("g")
-        .attr("class", "node");
-
-    newNodes.append("circle")
-        .attr("r", nodeRadius);
-
-    newNodes.append("text")
-        .text(d => d.data.value);
-
-    nodes = newNodes.merge(nodes)
-        .attr("transform", d => `translate(${d.x},${d.y})`);
-
-    reset();
-}
-
-d3.select("#updateTreeButton").on("click", updateTree);
-function dfs(node, visited = new Set(), steps = []) {
-    if (!node || visited.has(node)) return steps;
-    visited.add(node);
-    steps.push({node, queue: Array.from(visited)});
-    for (const child of node.children) {
-        dfs(child, visited, steps);
-    }
-    return steps;
-}
-
-function runTraversal() {
-    const algorithm = d3.select("#algorithmSelect").property("value");
-    if (algorithm === "bfs") {
-        bfs();
-    } else if (algorithm === "dfs") {
-        bfsSteps = dfs(root);
-    }
-    currentStep = -1;
-    d3.select("#startButton").property("disabled", true);
-    d3.select("#nextButton").property("disabled", false);
-    nextStep();
-}
-
-d3.select("#startButton").on("click", runTraversal);
+        updateTree();
     </script>
 </body>
 </html>
