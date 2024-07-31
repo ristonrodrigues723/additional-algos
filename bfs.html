@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree BFS Visualization</title>
+    <style>
+        .node {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            line-height: 40px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .node.visited {
+            background-color: #FF5722;
+        }
+        #tree {
+            text-align: center;
+        }
+        #controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="tree"></div>
+    <div id="controls">
+        <button id="bfsButton">Start BFS</button>
+        <button id="resetButton">Reset</button>
+    </div>
+
+    <script>
+        class TreeNode {
+            constructor(value) {
+                this.value = value;
+                this.children = [];
+            }
+        }
+
+        const root = new TreeNode(1);
+        root.children.push(new TreeNode(2));
+        root.children.push(new TreeNode(3));
+        root.children[0].children.push(new TreeNode(4));
+        root.children[0].children.push(new TreeNode(5));
+        root.children[1].children.push(new TreeNode(6));
+        root.children[1].children.push(new TreeNode(7));
+
+        function renderTree(node, parentElement) {
+            const nodeElement = document.createElement('div');
+            nodeElement.className = 'node';
+            nodeElement.textContent = node.value;
+            parentElement.appendChild(nodeElement);
+
+            if (node.children.length > 0) {
+                const childrenContainer = document.createElement('div');
+                parentElement.appendChild(childrenContainer);
+                node.children.forEach(child => renderTree(child, childrenContainer));
+            }
+        }
+
+        function bfs() {
+            const queue = [root];
+            const visited = new Set();
+            const nodeElements = document.querySelectorAll('.node');
+
+            function visitNode() {
+                if (queue.length === 0) return;
+
+                const node = queue.shift();
+                visited.add(node);
+                const nodeElement = Array.from(nodeElements).find(el => el.textContent == node.value);
+                nodeElement.classList.add('visited');
+
+                node.children.forEach(child => {
+                    if (!visited.has(child)) {
+                        queue.push(child);
+                    }
+                });
+
+                setTimeout(visitNode, 1000);
+            }
+
+            visitNode();
+        }
+
+        function reset() {
+            const nodeElements = document.querySelectorAll('.node');
+            nodeElements.forEach(el => el.classList.remove('visited'));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const treeContainer = document.getElementById('tree');
+            renderTree(root, treeContainer);
+
+            document.getElementById('bfsButton').addEventListener('click', bfs);
+            document.getElementById('resetButton').addEventListener('click', reset);
+        });
+    </script>
+</body>
+</html>
