@@ -3,39 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tree BFS Visualization</title>
+    <title>Enhanced Tree BFS Visualization</title>
     <style>
-        .node {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #4CAF50;
-            color: white;
-            text-align: center;
-            line-height: 40px;
-            margin: 10px;
-            cursor: pointer;
-        }
-        .node.visited {
-            background-color: #FF5722;
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
         }
         #tree {
-            text-align: center;
+            margin: 20px;
         }
-        #controls {
+        .node {
+            fill: #4CAF50;
+            stroke: #45a049;
+            stroke-width: 2;
+            cursor: pointer;
+            transition: fill 0.3s;
+        }
+        .node text {
+            fill: white;
+            font-size: 14px;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+        }
+        .node.visited {
+            fill: #FF5722;
+            stroke: #E64A19;
+        }
+        .link {
+            fill: none;
+            stroke: #999;
+            stroke-width: 2;
+        }
+        #controls, #queue {
+            margin: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #007B9A;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #queue {
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .queue-item {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
             text-align: center;
-            margin-top: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            margin-right: 5px;
         }
     </style>
 </head>
 <body>
+    <h1>Tree Breadth-First Search Visualization</h1>
     <div id="tree"></div>
     <div id="controls">
-        <button id="bfsButton">Start BFS</button>
+        <button id="startButton">Start BFS</button>
+        <button id="nextButton" disabled>Next Step</button>
+        <button id="prevButton" disabled>Previous Step</button>
         <button id="resetButton">Reset</button>
     </div>
+    <div id="queue"></div>
 
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
         class TreeNode {
             constructor(value) {
@@ -52,56 +107,116 @@
         root.children[1].children.push(new TreeNode(6));
         root.children[1].children.push(new TreeNode(7));
 
-        function renderTree(node, parentElement) {
-            const nodeElement = document.createElement('div');
-            nodeElement.className = 'node';
-            nodeElement.textContent = node.value;
-            parentElement.appendChild(nodeElement);
+        const width = 600;
+        const height = 400;
+        const nodeRadius = 20;
 
-            if (node.children.length > 0) {
-                const childrenContainer = document.createElement('div');
-                parentElement.appendChild(childrenContainer);
-                node.children.forEach(child => renderTree(child, childrenContainer));
-            }
-        }
+        const svg = d3.select("#tree")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const g = svg.append("g")
+            .attr("transform", `translate(${width / 2},${nodeRadius})`);
+
+        const treeLayout = d3.tree().size([width - 40, height - 40]);
+
+        const root_d3 = d3.hierarchy(root);
+        treeLayout(root_d3);
+
+        const links = g.selectAll(".link")
+            .data(root_d3.links())
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", d3.linkVertical()
+                .x(d => d.x)
+                .y(d => d.y));
+
+        const nodes = g.selectAll(".node")
+            .data(root_d3.descendants())
+            .enter().append("g")
+            .attr("class", "node")
+            .attr("transform", d => `translate(${d.x},${d.y})`);
+
+        nodes.append("circle")
+            .attr("r", nodeRadius);
+
+        nodes.append("text")
+            .text(d => d.data.value);
+
+        let bfsSteps = [];
+        let currentStep = -1;
 
         function bfs() {
             const queue = [root];
             const visited = new Set();
-            const nodeElements = document.querySelectorAll('.node');
+            bfsSteps = [];
 
-            function visitNode() {
-                if (queue.length === 0) return;
-
+            while (queue.length > 0) {
                 const node = queue.shift();
-                visited.add(node);
-                const nodeElement = Array.from(nodeElements).find(el => el.textContent == node.value);
-                nodeElement.classList.add('visited');
-
-                node.children.forEach(child => {
-                    if (!visited.has(child)) {
-                        queue.push(child);
-                    }
-                });
-
-                setTimeout(visitNode, 1000);
+                if (!visited.has(node)) {
+                    visited.add(node);
+                    bfsSteps.push({node, queue: [...queue]});
+                    queue.push(...node.children);
+                }
             }
+        }
 
-            visitNode();
+        function updateVisualization() {
+            const step = bfsSteps[currentStep];
+            nodes.classed("visited", d => bfsSteps.slice(0, currentStep + 1).some(s => s.node === d.data));
+            updateQueue(step.queue);
+        }
+
+        function updateQueue(queue) {
+            const queueContainer = d3.select("#queue");
+            queueContainer.selectAll("*").remove();
+            queue.forEach(node => {
+                queueContainer.append("div")
+                    .attr("class", "queue-item")
+                    .text(node.value);
+            });
+        }
+
+        function nextStep() {
+            if (currentStep < bfsSteps.length - 1) {
+                currentStep++;
+                updateVisualization();
+                updateButtons();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                updateVisualization();
+                updateButtons();
+            }
+        }
+
+        function updateButtons() {
+            d3.select("#prevButton").property("disabled", currentStep <= 0);
+            d3.select("#nextButton").property("disabled", currentStep >= bfsSteps.length - 1);
         }
 
         function reset() {
-            const nodeElements = document.querySelectorAll('.node');
-            nodeElements.forEach(el => el.classList.remove('visited'));
+            currentStep = -1;
+            nodes.classed("visited", false);
+            updateQueue([]);
+            updateButtons();
+            d3.select("#startButton").property("disabled", false);
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const treeContainer = document.getElementById('tree');
-            renderTree(root, treeContainer);
-
-            document.getElementById('bfsButton').addEventListener('click', bfs);
-            document.getElementById('resetButton').addEventListener('click', reset);
+        d3.select("#startButton").on("click", () => {
+            bfs();
+            d3.select("#startButton").property("disabled", true);
+            d3.select("#nextButton").property("disabled", false);
+            nextStep();
         });
+
+        d3.select("#nextButton").on("click", nextStep);
+        d3.select("#prevButton").on("click", prevStep);
+        d3.select("#resetButton").on("click", reset);
     </script>
 </body>
 </html>
