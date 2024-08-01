@@ -17,33 +17,70 @@ function generateRandomTree(depth = 3) {
     return root;
 }
 
-function createTreeElement(node) {
-    if (!node) return null;
+function createTreeVisualization(root) {
+    const svg = document.getElementById('treeSvg');
+    svg.innerHTML = ''; // Clear previous tree
 
-    const element = document.createElement('div');
-    element.className = 'node';
-    element.textContent = node.value;
+    const width = 800;
+    const height = 600;
+    const nodeRadius = 20;
 
-    const childrenContainer = document.createElement('div');
-    childrenContainer.style.display = 'flex';
+    function traverseTree(node, x, y, level) {
+        if (!node) return;
 
-    const leftChild = createTreeElement(node.left);
-    const rightChild = createTreeElement(node.right);
+        // Create circle for node
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', x);
+        circle.setAttribute('cy', y);
+        circle.setAttribute('r', nodeRadius);
+        circle.setAttribute('class', 'node');
+        svg.appendChild(circle);
 
-    if (leftChild) childrenContainer.appendChild(leftChild);
-    if (rightChild) childrenContainer.appendChild(rightChild);
+        // Create text for node value
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', x);
+        text.setAttribute('y', y);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'central');
+        text.textContent = node.value;
+        svg.appendChild(text);
 
-    if (leftChild || rightChild) element.appendChild(childrenContainer);
+        const nextY = y + 100;
+        const gap = width / Math.pow(2, level + 2);
 
-    return element;
+        if (node.left) {
+            const leftX = x - gap;
+            // Draw line to left child
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x);
+            line.setAttribute('y1', y + nodeRadius);
+            line.setAttribute('x2', leftX);
+            line.setAttribute('y2', nextY - nodeRadius);
+            line.setAttribute('class', 'link');
+            svg.appendChild(line);
+            traverseTree(node.left, leftX, nextY, level + 1);
+        }
+
+        if (node.right) {
+            const rightX = x + gap;
+            // Draw line to right child
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x);
+            line.setAttribute('y1', y + nodeRadius);
+            line.setAttribute('x2', rightX);
+            line.setAttribute('y2', nextY - nodeRadius);
+            line.setAttribute('class', 'link');
+            svg.appendChild(line);
+            traverseTree(node.right, rightX, nextY, level + 1);
+        }
+    }
+
+    traverseTree(root, width / 2, 50, 0);
 }
 
 function displayTree() {
     const tree = generateRandomTree();
-    const treeElement = createTreeElement(tree);
-    const container = document.getElementById('treeContainer');
-    container.innerHTML = '';
-    container.appendChild(treeElement);
+    createTreeVisualization(tree);
 }
 
 document.getElementById('generateTree').addEventListener('click', displayTree);
