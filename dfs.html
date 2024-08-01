@@ -1,18 +1,24 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tree Visualization-dfs</title>
+    <title>Binary Tree Visualization-dfs</title>
     <link rel="stylesheet" href="s.css">
 </head>
 <body>
     <div class="container">
-        <h1>Numbered Tree Visualization</h1>
-        <button id="generate-binary">Generate New Tree</button>
-        <div id="tree-container">
-            <svg id="tree-svg"></svg>
+        <h1>Interactive Binary Tree Visualization</h1>
+        <div class="controls">
+            <button id="generateTree">Generate New Tree</button>
+            <label for="depthInput">Max Depth:</label>
+            <input type="number" id="depthInput" min="1" max="6" value="4">
+        </div>
+        <div id="treeContainer">
+            <svg id="treeSvg"></svg>
         </div>
     </div>
     <script src="s.js"></script>

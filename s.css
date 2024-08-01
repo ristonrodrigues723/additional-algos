@@ -1,31 +1,41 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
-    background-color: #f0f0f0;
+    background-color: #f0f4f8;
 }
 
 .container {
     text-align: center;
     background-color: white;
-    padding: 20px;
+    padding: 2rem;
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 900px;
+    width: 100%;
 }
 
 h1 {
-    color: #333;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+}
+
+.controls {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
 }
 
 button {
-    font-size: 16px;
-    padding: 10px 20px;
-    margin: 20px 0;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
     cursor: pointer;
-    background-color: #4CAF50;
+    background-color: #3498db;
     color: white;
     border: none;
     border-radius: 5px;
@@ -33,36 +43,55 @@ button {
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #2980b9;
 }
 
-#tree-container {
-    width: 800px;
+input[type="range"] {
+    width: 200px;
+}
+
+#treeContainer {
+    width: 100%;
     height: 600px;
-    border: 1px solid #ccc;
-    margin: 0 auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
     overflow: auto;
+    background-color: #f8f9fa;
 }
 
-#tree-svg {
+#treeSvg {
     width: 100%;
     height: 100%;
 }
 
-.node-circle {
-    fill: #4CAF50;
-    stroke: #45a049;
+.node circle {
+    fill: #3498db;
+    stroke: #2980b9;
     stroke-width: 2;
+    transition: all 0.3s;
 }
 
-.node-text {
+.node:hover circle {
+    fill: #e74c3c;
+    stroke: #c0392b;
+}
+
+.node text {
     font-size: 14px;
     fill: white;
-    text-anchor: middle;
-    dominant-baseline: central;
+    pointer-events: none;
 }
 
-.node-link {
-    stroke: #999;
+.link {
+    fill: none;
+    stroke: #95a5a6;
     stroke-width: 2;
+    opacity: 0.7;
+    transition: all 0.3s;
+}
+
+.link:hover {
+    stroke: #7f8c8d;
+    stroke-width: 3;
+    opacity: 1;
 }

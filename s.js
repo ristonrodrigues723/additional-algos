@@ -6,7 +6,7 @@ class TreeNode {
     }
 }
 
-function generateRandomTree(depth = 3) {
+function generateRandomTree(depth = 4) {
     if (depth === 0) return null;
     
     const root = new TreeNode(Math.floor(Math.random() * 100));
@@ -28,13 +28,17 @@ function createTreeVisualization(root) {
     function traverseTree(node, x, y, level) {
         if (!node) return;
 
+        // Create group for node
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'node');
+        svg.appendChild(g);
+
         // Create circle for node
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', x);
         circle.setAttribute('cy', y);
         circle.setAttribute('r', nodeRadius);
-        circle.setAttribute('class', 'node');
-        svg.appendChild(circle);
+        g.appendChild(circle);
 
         // Create text for node value
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -43,7 +47,7 @@ function createTreeVisualization(root) {
         text.setAttribute('text-anchor', 'middle');
         text.setAttribute('dominant-baseline', 'central');
         text.textContent = node.value;
-        svg.appendChild(text);
+        g.appendChild(text);
 
         const nextY = y + 100;
         const gap = width / Math.pow(2, level + 2);
@@ -51,26 +55,22 @@ function createTreeVisualization(root) {
         if (node.left) {
             const leftX = x - gap;
             // Draw line to left child
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', x);
-            line.setAttribute('y1', y + nodeRadius);
-            line.setAttribute('x2', leftX);
-            line.setAttribute('y2', nextY - nodeRadius);
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const d = `M${x},${y + nodeRadius} C${x},${y + 50} ${leftX},${nextY - 50} ${leftX},${nextY - nodeRadius}`;
+            line.setAttribute('d', d);
             line.setAttribute('class', 'link');
-            svg.appendChild(line);
+            svg.insertBefore(line, svg.firstChild);
             traverseTree(node.left, leftX, nextY, level + 1);
         }
 
         if (node.right) {
             const rightX = x + gap;
             // Draw line to right child
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', x);
-            line.setAttribute('y1', y + nodeRadius);
-            line.setAttribute('x2', rightX);
-            line.setAttribute('y2', nextY - nodeRadius);
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const d = `M${x},${y + nodeRadius} C${x},${y + 50} ${rightX},${nextY - 50} ${rightX},${nextY - nodeRadius}`;
+            line.setAttribute('d', d);
             line.setAttribute('class', 'link');
-            svg.appendChild(line);
+            svg.insertBefore(line, svg.firstChild);
             traverseTree(node.right, rightX, nextY, level + 1);
         }
     }
