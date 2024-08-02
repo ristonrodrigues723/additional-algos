@@ -17,70 +17,109 @@ function generateRandomTree(depth = 4) {
     return root;
 }
 
+function dfs(root, target) {
+    const stack = [root];
+    const path = [];
+    
+    while (stack.length > 0) {
+        const node = stack.pop();
+        path.push(node);
+        
+        if (node.value === target) {
+            return path;
+        }
+        
+        if (node.right) stack.push(node.right);
+        if (node.left) stack.push(node.left);
+    }
+    
+    return null;
+}
+
 function createTreeVisualization(root) {
-    const svg = document.getElementById('treeSvg');
-    svg.innerHTML = ''; // Clear previous tree
+    const svg = d3.select('#treeSvg');
+    svg.selectAll("*").remove(); // Clear previous tree
 
     const width = 800;
     const height = 600;
     const nodeRadius = 20;
 
-    function traverseTree(node, x, y, level) {
-        if (!node) return;
+    const treeLayout = d3.tree().size([width - 100, height - 100]);
+    const root = d3.hierarchy(root);
+    treeLayout(root);
 
-        // Create group for node
-        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        g.setAttribute('class', 'node');
-        svg.appendChild(g);
+    const g = svg.append("g")
+        .attr("transform", `translate(50, 50)`);
 
-        // Create circle for node
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('cx', x);
-        circle.setAttribute('cy', y);
-        circle.setAttribute('r', nodeRadius);
-        g.appendChild(circle);
+    const link = g.selectAll(".link")
+        .data(root.links())
+        .enter().append("path")
+        .attr("class", "link")
+        .attr("d", d3.linkHorizontal()
+            .x(d => d.y)
+            .y(d => d.x));
 
-        // Create text for node value
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', x);
-        text.setAttribute('y', y);
-        text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('dominant-baseline', 'central');
-        text.textContent = node.value;
-        g.appendChild(text);
+    const node = g.selectAll(".node")
+        .data(root.descendants())
+        .enter().append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${d.y},${d.x})`);
 
-        const nextY = y + 100;
-        const gap = width / Math.pow(2, level + 2);
+    node.append("circle")
+        .attr("r", nodeRadius);
 
-        if (node.left) {
-            const leftX = x - gap;
-            // Draw line to left child
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            const d = `M${x},${y + nodeRadius} C${x},${y + 50} ${leftX},${nextY - 50} ${leftX},${nextY - nodeRadius}`;
-            line.setAttribute('d', d);
-            line.setAttribute('class', 'link');
-            svg.insertBefore(line, svg.firstChild);
-            traverseTree(node.left, leftX, nextY, level + 1);
-        }
+    node.append("text")
+        .attr("dy", "0.31em")
+        .attr("x", d => d.children ? -6 : 6)
+        .attr("text-anchor", d => d.children ? "end" : "start")
+        .text(d => d.data.value);
 
-        if (node.right) {
-            const rightX = x + gap;
-            // Draw line to right child
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            const d = `M${x},${y + nodeRadius} C${x},${y + 50} ${rightX},${nextY - 50} ${rightX},${nextY - nodeRadius}`;
-            line.setAttribute('d', d);
-            line.setAttribute('class', 'link');
-            svg.insertBefore(line, svg.firstChild);
-            traverseTree(node.right, rightX, nextY, level + 1);
-        }
-    }
-
-    traverseTree(root, width / 2, 50, 0);
+    return root.data;
 }
 
 function displayTree() {
-    const tree = generateRandomTree();
-    createTreeVisualization(tree);
+    const depth = parseInt(document.getElementById('depthInput').value);
+    const tree = generateRandomTree(depth);
+    const rootNode = createTreeVisualization(tree);
+    
+    // Add event listener for DFS search
+    document.getElementById('searchButton').addEventListener('click', () => {
+        const target = parseInt(document.getElementById('searchInput').value);
+        const path = dfs(rootNode, target);
+        
+        if (path) {
+            highlightPath(path);
+        } else {
+            alert('Node not found!');
+        }
+    });
+}
+
+function highlightPath(path) {
+    d3.selectAll('.node circle').attr('fill', '#3498db');
+    d3.selectAll('.link').attr('stroke', '#95a5a6');
+
+    path.forEach((node, index) => {
+        d3.select(`.node:nth-child(${getNodeIndex(node) + 1}) circle`)
+            .attr('fill', '#e74c3c')
+            .attr('r', 25);
+
+        if (index < path.length - 1) {
+            const nextNode = path[index + 1];
+            d3.selectAll('.link')
+                .filter(d => 
+                    (d.source.data === node && d.target.data === nextNode) ||
+                    (d.target.data === node && d.source.data === nextNode)
+                )
+                .attr('stroke', '#e74c3c')
+                .attr('stroke-width', 3);
+        }
+    });
+}
+
+function getNodeIndex(node) {
+    return Array.from(document.querySelectorAll('.node'))
+        .findIndex(el => el.__data__.data === node);
 }
 
 document.getElementById('generateTree').addEventListener('click', displayTree);
