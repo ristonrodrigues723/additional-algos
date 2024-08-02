@@ -6,123 +6,234 @@ class TreeNode {
     }
 }
 
-function generateRandomTree(depth = 4) {
-    if (depth === 0) return null;
-    
-    const root = new TreeNode(Math.floor(Math.random() * 100));
-    
-    if (Math.random() > 0.3) root.left = generateRandomTree(depth - 1);
-    if (Math.random() > 0.3) root.right = generateRandomTree(depth - 1);
-    
-    return root;
-}
+class BinaryTree {
+    constructor() {
+        this.root = null;
+    }
+    getHeight(node = this.root) {
+        if (node === null) return 0;
+        return 1 + Math.max(this.getHeight(node.left), this.getHeight(node.right));
+    }
 
-function dfs(root, target) {
-    const stack = [root];
-    const path = [];
-    
-    while (stack.length > 0) {
-        const node = stack.pop();
-        path.push(node);
+    insert(value, parentValue, isLeft) {
+        const newNode = new TreeNode(value);
+        if (!this.root) {
+            this.root = newNode;
+            return "Root node added";
+        }
+        const queue = [this.root];
+        while (queue.length > 0) {
+            const current = queue.shift();
+            if (current.value === parentValue) {
+                if (isLeft && !current.left) {
+                    current.left = newNode;
+                    return `Left child ${value} added to parent ${parentValue}`;
+                } else if (!isLeft && !current.right) {
+                    current.right = newNode;
+                    return `Right child ${value} added to parent ${parentValue}`;
+                }
+                return "Node already exists";
+            }
+            if (current.left) queue.push(current.left);
+            if (current.right) queue.push(current.right);
+        }
+        return "Parent node not found";
+    }
+
+    reset() {
+        this.root = null;
+    }
+
+    dfs() {
+        const result = [];
         
-        if (node.value === target) {
-            return path;
+        function dfsHelper(node) {
+            if (node === null) return;
+            
+            result.push(node.value);
+            dfsHelper(node.left);
+            dfsHelper(node.right);
         }
         
-        if (node.right) stack.push(node.right);
-        if (node.left) stack.push(node.left);
+        dfsHelper(this.root);
+        return result;
+    }
+}
+
+const tree = new BinaryTree();
+const svg = document.getElementById('tree-svg');
+const addNodeBtn = document.getElementById('addNodeBtn');
+const buildTreeBtn = document.getElementById('buildTreeBtn');
+const resetBtn = document.getElementById('resetBtn');
+const dfsBtn = document.getElementById('dfsBtn');
+const messageBox = document.getElementById('messageBox');
+const rootDisplay = document.getElementById('rootDisplay');
+const leftChildDisplay = document.getElementById('leftChildDisplay');
+const rightChildDisplay = document.getElementById('rightChildDisplay');
+const treeHeight = document.getElementById('treeHeight');
+
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+function drawTree() {
+    svg.innerHTML = '';
+    if (!tree.root) return;
+
+    const nodeRadius = 20;
+    const levelHeight = 60;
+    const svgWidth = 600;
+    const svgHeight = 400;
+
+    function drawNode(node, x, y, level) {
+        if (!node) return;
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", x);
+        circle.setAttribute("cy", y);
+        circle.setAttribute("r", nodeRadius);
+        circle.setAttribute("fill", getRandomColor());
+        svg.appendChild(circle);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", x);
+        text.setAttribute("y", y + 5);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("fill", "white");
+        text.textContent = node.value;
+        svg.appendChild(text);
+
+        circle.addEventListener('click', () => {
+            displayNodeInfo(node);
+        });
+
+        if (node.left) {
+            const leftX = x - svgWidth / Math.pow(2, level + 2);
+            const leftY = y + levelHeight;
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x);
+            line.setAttribute("y1", y + nodeRadius);
+            line.setAttribute("x2", leftX);
+            line.setAttribute("y2", leftY - nodeRadius);
+            line.setAttribute("stroke", "black");
+            svg.appendChild(line);
+            drawNode(node.left, leftX, leftY, level + 1);
+        }
+
+        if (node.right) {
+            const rightX = x + svgWidth / Math.pow(2, level + 2);
+            const rightY = y + levelHeight;
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x);
+            line.setAttribute("y1", y + nodeRadius);
+            line.setAttribute("x2", rightX);
+            line.setAttribute("y2", rightY - nodeRadius);
+            line.setAttribute("stroke", "black");
+            svg.appendChild(line);
+            drawNode(node.right, rightX, rightY, level + 1);
+        }
+    }
+
+    drawNode(tree.root, svgWidth / 2, nodeRadius + 10, 0);
+}
+
+function displayMessage(message) {
+    messageBox.textContent = message;
+}
+
+function displayNodeInfo(node) {
+    requestAnimationFrame(() => {
+        rootDisplay.textContent = node.value;
+        leftChildDisplay.textContent = node.left ? node.left.value : 'None';
+        rightChildDisplay.textContent = node.right ? node.right.value : 'None';
+        treeHeight.textContent = tree.getHeight();
+    });
+}
+
+function resetDisplay() {
+    svg.innerHTML = '';
+    rootDisplay.textContent = 'None';
+    leftChildDisplay.textContent = 'None';
+    rightChildDisplay.textContent = 'None';
+    treeHeight.textContent = '0';
+    displayMessage('Tree has been reset');
+  
+    displayNodeInfo({ value: 'None', left: null, right: null });
+}
+
+addNodeBtn.addEventListener('click', () => {
+    const rootValue = parseInt(document.getElementById('rootInput').value);
+    const leftValue = parseInt(document.getElementById('leftChildInput').value);
+    const rightValue = parseInt(document.getElementById('rightChildInput').value);
+    let message = "";
+
+    if (!isNaN(rootValue)) {
+        if (!tree.root) {
+            message += tree.insert(rootValue) + "\n";
+        }
+        if (!isNaN(leftValue)) {
+            message += tree.insert(leftValue, rootValue, true) + "\n";
+        }
+        if (!isNaN(rightValue)) {
+            message += tree.insert(rightValue, rootValue, false) + "\n";
+        }
+        displayNodeInfo(tree.root);
+    } else {
+        message = "Please enter a valid root value";
+    }
+
+    displayMessage(message.trim());
+    document.getElementById('rootInput').value = '';
+    document.getElementById('leftChildInput').value = '';
+    document.getElementById('rightChildInput').value = '';
+});
+
+buildTreeBtn.addEventListener('click', () => {
+    drawTree();
+    displayNodeInfo(tree.root);
+    displayMessage("Tree built and displayed");
+});
+
+resetBtn.addEventListener('click', () => {
+    tree.reset();
+    resetDisplay();
+});
+
+dfsBtn.addEventListener('click', () => {
+    if (!tree.root) {
+        displayMessage("Tree is empty. Please add nodes first.");
+        return;
+    }
+    const dfsResult = tree.dfs();
+    displayMessage("Depth-First Search Result: " + dfsResult.join(" -> "));
+    
+    highlightDFSPath(dfsResult);
+});
+
+function highlightDFSPath(path) {
+    const circles = svg.getElementsByTagName('circle');
+    let delay = 0;
+    
+    for (let circle of circles) {
+        circle.setAttribute('fill', getRandomColor());
     }
     
-    return null;
+    for (let value of path) {
+        setTimeout(() => {
+            for (let circle of circles) {
+                if (circle.nextSibling.textContent === value.toString()) {
+                    circle.setAttribute('fill', 'red');
+                    break;
+                }
+            }
+        }, delay);
+        delay += 500;
+    }
 }
 
-function createTreeVisualization(root) {
-    const svg = d3.select('#treeSvg');
-    svg.selectAll("*").remove(); // Clear previous tree
-
-    const width = 800;
-    const height = 600;
-    const nodeRadius = 20;
-
-    const treeLayout = d3.tree().size([width - 100, height - 100]);
-    const root = d3.hierarchy(root);
-    treeLayout(root);
-
-    const g = svg.append("g")
-        .attr("transform", `translate(50, 50)`);
-
-    const link = g.selectAll(".link")
-        .data(root.links())
-        .enter().append("path")
-        .attr("class", "link")
-        .attr("d", d3.linkHorizontal()
-            .x(d => d.y)
-            .y(d => d.x));
-
-    const node = g.selectAll(".node")
-        .data(root.descendants())
-        .enter().append("g")
-        .attr("class", "node")
-        .attr("transform", d => `translate(${d.y},${d.x})`);
-
-    node.append("circle")
-        .attr("r", nodeRadius);
-
-    node.append("text")
-        .attr("dy", "0.31em")
-        .attr("x", d => d.children ? -6 : 6)
-        .attr("text-anchor", d => d.children ? "end" : "start")
-        .text(d => d.data.value);
-
-    return root.data;
-}
-
-function displayTree() {
-    const depth = parseInt(document.getElementById('depthInput').value);
-    const tree = generateRandomTree(depth);
-    const rootNode = createTreeVisualization(tree);
-    
-    // Add event listener for DFS search
-    document.getElementById('searchButton').addEventListener('click', () => {
-        const target = parseInt(document.getElementById('searchInput').value);
-        const path = dfs(rootNode, target);
-        
-        if (path) {
-            highlightPath(path);
-        } else {
-            alert('Node not found!');
-        }
-    });
-}
-
-function highlightPath(path) {
-    d3.selectAll('.node circle').attr('fill', '#3498db');
-    d3.selectAll('.link').attr('stroke', '#95a5a6');
-
-    path.forEach((node, index) => {
-        d3.select(`.node:nth-child(${getNodeIndex(node) + 1}) circle`)
-            .attr('fill', '#e74c3c')
-            .attr('r', 25);
-
-        if (index < path.length - 1) {
-            const nextNode = path[index + 1];
-            d3.selectAll('.link')
-                .filter(d => 
-                    (d.source.data === node && d.target.data === nextNode) ||
-                    (d.target.data === node && d.source.data === nextNode)
-                )
-                .attr('stroke', '#e74c3c')
-                .attr('stroke-width', 3);
-        }
-    });
-}
-
-function getNodeIndex(node) {
-    return Array.from(document.querySelectorAll('.node'))
-        .findIndex(el => el.__data__.data === node);
-}
-
-document.getElementById('generateTree').addEventListener('click', displayTree);
-
-// Generate an initial tree when the page loads
-displayTree();
+displayNodeInfo({ value: 'None', left: null, right: null });
