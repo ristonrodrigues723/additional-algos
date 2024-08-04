@@ -1,8 +1,13 @@
 const board = document.getElementById('sudoku-board');
 const solveBtn = document.getElementById('solve-btn');
 const clearBtn = document.getElementById('clear-btn');
+const stepBtn = document.getElementById('step-btn');
+const speedSlider = document.getElementById('speed');
+const statusDiv = document.getElementById('status');
 
 let sudokuArray = Array(9).fill().map(() => Array(9).fill(0));
+let solving = false;
+let stepMode = false;
 
 function createBoard() {
     for (let i = 0; i < 9; i++) {
@@ -14,7 +19,9 @@ function createBoard() {
             input.min = 1;
             input.max = 9;
             input.addEventListener('input', (e) => {
-                sudokuArray[i][j] = e.target.value ? parseInt(e.target.value) : 0;
+                const value = e.target.value ? parseInt(e.target.value) : 0;
+                sudokuArray[i][j] = value;
+                highlightConflicts(i, j, value);
             });
             cell.appendChild(input);
             board.appendChild(cell);
@@ -29,6 +36,33 @@ function updateBoard() {
         const j = index % 9;
         cell.value = sudokuArray[i][j] || '';
     });
+}
+
+function highlightConflicts(row, col, value) {
+    const cells = board.querySelectorAll('.cell');
+    cells.forEach((cell) => cell.classList.remove('invalid'));
+
+    if (value === 0) return;
+
+    for (let i = 0; i < 9; i++) {
+        if (i !== col && sudokuArray[row][i] === value) {
+            cells[row * 9 + i].classList.add('invalid');
+        }
+        if (i !== row && sudokuArray[i][col] === value) {
+            cells[i * 9 + col].classList.add('invalid');
+        }
+    }
+
+    const boxRow = Math.floor(row / 3) * 3;
+    const boxCol = Math.floor(col / 3) * 3;
+
+    for (let i = boxRow; i < boxRow + 3; i++) {
+        for (let j = boxCol; j < boxCol + 3; j++) {
+            if (i !== row && j !== col && sudokuArray[i][j] === value) {
+                cells[i * 9 + j].classList.add('invalid');
+            }
+        }
+    }
 }
 
 function isValid(num, row, col) {
@@ -52,7 +86,7 @@ function isValid(num, row, col) {
     return true;
 }
 
-function solveSudoku() {
+async function solveSudoku() {
     for (let row = 0; row < 9; row++) {
         for (let col = 0; col < 9; col++) {
             if (sudokuArray[row][col] === 0) {
@@ -60,12 +94,29 @@ function solveSudoku() {
                     if (isValid(num, row, col)) {
                         sudokuArray[row][col] = num;
                         updateBoard();
+                        highlightCell(row, col, 'current');
+                        
+                        if (stepMode) {
+                            statusDiv.textContent = `Trying ${num} at (${row + 1}, ${col + 1})`;
+                            await waitForStep();
+                        } else {
+                            await sleep(101 - speedSlider.value);
+                        }
 
-                        if (solveSudoku()) {
+                        if (await solveSudoku()) {
                             return true;
                         }
 
                         sudokuArray[row][col] = 0;
+                        updateBoard();
+                        highlightCell(row, col, 'current');
+                        
+                        if (stepMode) {
+                            statusDiv.textContent = `Backtracking from (${row + 1}, ${col + 1})`;
+                            await waitForStep();
+                        } else {
+                            await sleep(101 - speedSlider.value);
+                        }
                     }
                 }
                 return false;
@@ -75,19 +126,56 @@ function solveSudoku() {
     return true;
 }
 
+function highlightCell(row, col, className) {
+    const cells = board.querySelectorAll('.cell');
+    cells.forEach(cell => cell.classList.remove('current', 'valid', 'invalid'));
+    cells[row * 9 + col].classList.add(className);
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function waitForStep() {
+    return new Promise(resolve => {
+        stepBtn.onclick = () => {
+            resolve();
+        };
+    });
+}
+
 function clearBoard() {
     sudokuArray = Array(9).fill().map(() => Array(9).fill(0));
     updateBoard();
+    const cells = board.querySelectorAll('.cell');
+    cells.forEach(cell => cell.classList.remove('current', 'valid', 'invalid'));
+    statusDiv.textContent = '';
 }
 
-solveBtn.addEventListener('click', () => {
-    if (solveSudoku()) {
-        console.log('Sudoku solved!');
+solveBtn.addEventListener('click', async () => {
+    if (!solving) {
+        solving = true;
+        stepMode = false;
+        solveBtn.textContent = 'Stop';
+        const solved = await solveSudoku();
+        solving = false;
+        solveBtn.textContent = 'Solve';
+        statusDiv.textContent = solved ? 'Sudoku solved!' : 'No solution exists.';
     } else {
-        console.log('No solution exists.');
+        solving = false;
+        solveBtn.textContent = 'Solve';
+        statusDiv.textContent = 'Solving stopped.';
     }
 });
 
 clearBtn.addEventListener('click', clearBoard);
+
+stepBtn.addEventListener('click', () => {
+    if (!solving) {
+        solving = true;
+        stepMode = true;
+        solveSudoku();
+    }
+});
 
 createBoard();
