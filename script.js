@@ -10,6 +10,42 @@ let solving = false;
 let stepMode = false;
 
 function createBoard() {
+    for (let blockRow = 0; blockRow < 3; blockRow++) {
+        for (let blockCol = 0; blockCol < 3; blockCol++) {
+            const block = document.createElement('div');
+            block.classList.add('block');
+            
+            for (let cellRow = 0; cellRow < 3; cellRow++) {
+                for (let cellCol = 0; cellCol < 3; cellCol++) {
+                    const i = blockRow * 3 + cellRow;
+                    const j = blockCol * 3 + cellCol;
+                    
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.min = 1;
+                    input.max = 9;
+                    input.addEventListener('input', (e) => {
+                        const value = e.target.value ? parseInt(e.target.value) : 0;
+                        sudokuArray[i][j] = value;
+                        highlightConflicts(i, j, value);
+                    });
+                    cell.appendChild(input);
+                    block.appendChild(cell);
+                }
+            }
+            
+            board.appendChild(block);
+        }
+    }
+}
+
+// The rest of the JavaScript code remains the same as in the previous version
+
+createBoard();
+
+function createBoard() {
     for (let i = 0; i < 9; i++) {
         for (let j = 0; j < 9; j++) {
             const cell = document.createElement('div');
