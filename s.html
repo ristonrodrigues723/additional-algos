@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sudoku Solver</title>
+    <title>Interactive Sudoku Solver</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -28,6 +28,7 @@
             text-align: center;
             border: 1px solid #999;
             font-size: 20px;
+            transition: background-color 0.3s;
         }
         #sudoku td:nth-child(3n) {
             border-right: 2px solid #333;
@@ -40,17 +41,41 @@
             padding: 10px 20px;
             margin: 0 10px;
             cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        select {
+            font-size: 16px;
+            padding: 10px;
+            margin: 0 10px;
+        }
+        .controls {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <table id="sudoku"></table>
-        <button onclick="generatePuzzle()">Generate Puzzle</button>
-        <button onclick="solvePuzzle()">Solve Puzzle</button>
+        <div class="controls">
+            <select id="difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+            <button onclick="generatePuzzle()">Generate Puzzle</button>
+            <button onclick="visualSolve()">Solve</button>
+            <button onclick="quickSolve()">Quick Solve</button>
+        </div>
     </div>
     <script>
         const board = Array(9).fill().map(() => Array(9).fill(0));
+        let solving = false;
 
         function generatePuzzle() {
             clearBoard();
@@ -88,7 +113,8 @@
         }
 
         function removeCells() {
-            const cellsToRemove = 40;
+            const difficulty = document.getElementById("difficulty").value;
+            const cellsToRemove = difficulty === "easy" ? 30 : difficulty === "medium" ? 40 : 50;
             for (let i = 0; i < cellsToRemove; i++) {
                 let row, col;
                 do {
@@ -99,12 +125,48 @@
             }
         }
 
-        function solvePuzzle() {
+        async function visualSolve() {
+            if (solving) return;
+            solving = true;
+            if (await visualSolveSudoku(board)) {
+                updateBoard();
+            } else {
+                alert("No solution exists");
+            }
+            solving = false;
+        }
+
+        function quickSolve() {
             if (solveSudoku(board)) {
                 updateBoard();
             } else {
                 alert("No solution exists");
             }
+        }
+
+        async function visualSolveSudoku(board) {
+            const emptyCell = findEmptyCell(board);
+            if (!emptyCell) return true;
+
+            const [row, col] = emptyCell;
+
+            for (let num = 1; num <= 9; num++) {
+                if (isSafe(row, col, num)) {
+                    board[row][col] = num;
+                    updateCell(row, col, num);
+                    await new Promise(resolve => setTimeout(resolve, 50));
+
+                    if (await visualSolveSudoku(board)) {
+                        return true;
+                    }
+
+                    board[row][col] = 0;
+                    updateCell(row, col, 0);
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+            }
+
+            return false;
         }
 
         function solveSudoku(board) {
@@ -176,6 +238,16 @@
                     cell.textContent = board[i][j] || "";
                 }
             }
+        }
+
+        function updateCell(row, col, value) {
+            const table = document.getElementById("sudoku");
+            const cell = table.rows[row].cells[col];
+            cell.textContent = value || "";
+            cell.style.backgroundColor = value ? "#e6ffe6" : "";
+            setTimeout(() => {
+                cell.style.backgroundColor = "";
+            }, 300);
         }
 
         // Initialize the board
