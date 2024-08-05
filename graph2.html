@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Graph Visualization</title>
+    <title>Interactive Graph Visualization with DFS</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -41,7 +41,7 @@
             text-align: center;
             margin-bottom: 20px;
         }
-        button {
+        button, input {
             margin: 5px;
             padding: 10px 15px;
             font-size: 14px;
@@ -54,14 +54,20 @@
         button:hover {
             background-color: #45a049;
         }
-        #nodeCount, #linkProbability {
+        #nodeCount, #linkProbability, #startNode, #searchNode {
             width: 50px;
+            background-color: white;
+            color: black;
+        }
+        .searched {
+            stroke: #ff0000;
+            stroke-width: 3px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Interactive Graph Visualization</h1>
+        <h1>Interactive Graph Visualization with DFS</h1>
         <div class="controls">
             <label for="nodeCount">Nodes:</label>
             <input type="number" id="nodeCount" value="10" min="2" max="50">
@@ -69,6 +75,13 @@
             <input type="number" id="linkProbability" value="0.2" min="0" max="1" step="0.1">
             <button onclick="generateRandomGraph()">Generate Random Graph</button>
             <button onclick="toggleNodeDragging()">Toggle Node Dragging</button>
+            <br>
+            <label for="startNode">Start Node:</label>
+            <input type="text" id="startNode" placeholder="A">
+            <label for="searchNode">Search Node:</label>
+            <input type="text" id="searchNode" placeholder="B">
+            <button onclick="performDFS()">Perform DFS</button>
+            <button onclick="resetSearch()">Reset Search</button>
         </div>
         <svg id="graph" width="700" height="500"></svg>
     </div>
@@ -77,6 +90,7 @@
         let nodes = [];
         let links = [];
         let nodeDraggingEnabled = true;
+        let isSearching = false;
 
         const svg = d3.select("#graph");
         const width = +svg.attr("width");
@@ -159,20 +173,20 @@
         }
 
         function dragstarted(event, d) {
-            if (!nodeDraggingEnabled) return;
+            if (!nodeDraggingEnabled || isSearching) return;
             if (!event.active) simulation.alphaTarget(0.3).restart();
             d.fx = d.x;
             d.fy = d.y;
         }
 
         function dragged(event, d) {
-            if (!nodeDraggingEnabled) return;
+            if (!nodeDraggingEnabled || isSearching) return;
             d.fx = event.x;
             d.fy = event.y;
         }
 
         function dragended(event, d) {
-            if (!nodeDraggingEnabled) return;
+            if (!nodeDraggingEnabled || isSearching) return;
             if (!event.active) simulation.alphaTarget(0);
             d.fx = null;
             d.fy = null;
@@ -183,6 +197,7 @@
         }
 
         function highlightConnections(event, d) {
+            if (isSearching) return;
             d3.selectAll(".link")
                 .style("stroke", l => (l.source === d || l.target === d) ? "#ff0000" : "#999")
                 .style("stroke-width", l => (l.source === d || l.target === d) ? 2 : 1);
@@ -192,12 +207,89 @@
         }
 
         function resetHighlight() {
+            if (isSearching) return;
             d3.selectAll(".link")
                 .style("stroke", "#999")
                 .style("stroke-width", 1);
 
             d3.selectAll(".node")
                 .style("opacity", 1);
+        }
+
+        function performDFS() {
+            isSearching = true;
+            simulation.stop();
+            resetSearch();
+
+            const startNodeLabel = document.getElementById("startNode").value.toUpperCase();
+            const searchNodeLabel = document.getElementById("searchNode").value.toUpperCase();
+
+            const startNode = nodes.find(n => n.label === startNodeLabel);
+            const searchNode = nodes.find(n => n.label === searchNodeLabel);
+
+            if (!startNode || !searchNode) {
+                alert("Invalid start or search node");
+                isSearching = false;
+                return;
+            }
+
+            const visited = new Set();
+            const path = [];
+
+            function dfs(node) {
+                visited.add(node);
+                path.push(node);
+
+                if (node === searchNode) {
+                    visualizePath(path);
+                    return true;
+                }
+
+                const neighbors = links
+                    .filter(l => l.source === node || l.target === node)
+                    .map(l => l.source === node ? l.target : l.source);
+
+                for (const neighbor of neighbors) {
+                    if (!visited.has(neighbor)) {
+                        if (dfs(neighbor)) {
+                            return true;
+                        }
+                    }
+                }
+
+                path.pop();
+                return false;
+            }
+
+            if (dfs(startNode)) {
+                console.log("Path found!");
+            } else {
+                console.log("No path found");
+                alert("No path found");
+            }
+
+            isSearching = false;
+        }
+
+        function visualizePath(path) {
+            svg.selectAll(".node")
+                .classed("searched", d => path.includes(d));
+
+            svg.selectAll(".link")
+                .classed("searched", d => {
+                    for (let i = 0; i < path.length - 1; i++) {
+                        if ((d.source === path[i] && d.target === path[i+1]) ||
+                            (d.target === path[i] && d.source === path[i+1])) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+        }
+
+        function resetSearch() {
+            svg.selectAll(".node").classed("searched", false);
+            svg.selectAll(".link").classed("searched", false);
         }
 
         generateRandomGraph();
