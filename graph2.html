@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Graph Visualization with DFS and BFS</title>
+    <title>Interactive Graph Visualization with Animated DFS and BFS</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -32,10 +32,12 @@
         .node {
             stroke: #fff;
             stroke-width: 2px;
+            transition: all 0.3s ease;
         }
         .link {
             stroke: #999;
             stroke-opacity: 0.6;
+            transition: all 0.3s ease;
         }
         .controls {
             text-align: center;
@@ -54,7 +56,7 @@
         button:hover {
             background-color: #45a049;
         }
-        #nodeCount, #linkProbability, #startNode, #searchNode {
+        #nodeCount, #linkProbability, #startNode, #searchNode, #animationSpeed {
             width: 50px;
             background-color: white;
             color: black;
@@ -63,11 +65,17 @@
             stroke: #ff0000;
             stroke-width: 3px;
         }
+        .current {
+            fill: #ff00ff !important;
+        }
+        .visited {
+            fill: #ffa500 !important;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Interactive Graph Visualization with DFS and BFS</h1>
+        <h1>Interactive Graph Visualization with Animated DFS and BFS</h1>
         <div class="controls">
             <label for="nodeCount">Nodes:</label>
             <input type="number" id="nodeCount" value="10" min="2" max="50">
@@ -84,6 +92,8 @@
                 <option value="dfs">DFS</option>
                 <option value="bfs">BFS</option>
             </select>
+            <label for="animationSpeed">Animation Speed (ms):</label>
+            <input type="number" id="animationSpeed" value="500" min="100" max="2000" step="100">
             <button onclick="performSearch()">Perform Search</button>
             <button onclick="resetSearch()">Reset Search</button>
         </div>
@@ -220,7 +230,7 @@
                 .style("opacity", 1);
         }
 
-        function performSearch() {
+        async function performSearch() {
             isSearching = true;
             simulation.stop();
             resetSearch();
@@ -228,6 +238,7 @@
             const startNodeLabel = document.getElementById("startNode").value.toUpperCase();
             const searchNodeLabel = document.getElementById("searchNode").value.toUpperCase();
             const searchMethod = document.getElementById("searchMethod").value;
+            const animationSpeed = parseInt(document.getElementById("animationSpeed").value);
 
             const startNode = nodes.find(n => n.label === startNodeLabel);
             const searchNode = nodes.find(n => n.label === searchNodeLabel);
@@ -238,16 +249,16 @@
                 return;
             }
 
-            let path;
+            let searchSteps;
             if (searchMethod === "dfs") {
-                path = dfs(startNode, searchNode);
+                searchSteps = dfs(startNode, searchNode);
             } else {
-                path = bfs(startNode, searchNode);
+                searchSteps = bfs(startNode, searchNode);
             }
 
-            if (path) {
+            if (searchSteps) {
                 console.log("Path found!");
-                visualizePath(path);
+                await animateSearch(searchSteps, animationSpeed);
             } else {
                 console.log("No path found");
                 alert("No path found");
@@ -258,11 +269,11 @@
 
         function dfs(startNode, searchNode) {
             const visited = new Set();
-            const path = [];
+            const searchSteps = [];
 
             function dfsRecursive(node) {
                 visited.add(node);
-                path.push(node);
+                searchSteps.push({type: 'visit', node: node});
 
                 if (node === searchNode) {
                     return true;
@@ -274,29 +285,44 @@
 
                 for (const neighbor of neighbors) {
                     if (!visited.has(neighbor)) {
+                        searchSteps.push({type: 'explore', source: node, target: neighbor});
                         if (dfsRecursive(neighbor)) {
                             return true;
                         }
                     }
                 }
 
-                path.pop();
+                searchSteps.push({type: 'backtrack', node: node});
                 return false;
             }
 
-            return dfsRecursive(startNode) ? path : null;
+            const found = dfsRecursive(startNode);
+            return found ? searchSteps : null;
         }
 
         function bfs(startNode, searchNode) {
-            const queue = [[startNode]];
+            const queue = [startNode];
             const visited = new Set([startNode]);
+            const searchSteps = [];
+            const parent = new Map();
 
             while (queue.length > 0) {
-                const path = queue.shift();
-                const node = path[path.length - 1];
+                const node = queue.shift();
+                searchSteps.push({type: 'visit', node: node});
 
                 if (node === searchNode) {
-                    return path;
+                    const path = [];
+                    let current = node;
+                    while (current !== startNode) {
+                        path.unshift(current);
+                        current = parent.get(current);
+                    }
+                    path.unshift(startNode);
+
+                    for (let i = 0; i < path.length - 1; i++) {
+                        searchSteps.push({type: 'pathHighlight', source: path[i], target: path[i+1]});
+                    }
+                    return searchSteps;
                 }
 
                 const neighbors = links
@@ -306,7 +332,9 @@
                 for (const neighbor of neighbors) {
                     if (!visited.has(neighbor)) {
                         visited.add(neighbor);
-                        queue.push([...path, neighbor]);
+                        parent.set(neighbor, node);
+                        queue.push(neighbor);
+                        searchSteps.push({type: 'explore', source: node, target: neighbor});
                     }
                 }
             }
@@ -314,25 +342,47 @@
             return null;
         }
 
-        function visualizePath(path) {
-            svg.selectAll(".node")
-                .classed("searched", d => path.includes(d));
-
-            svg.selectAll(".link")
-                .classed("searched", d => {
-                    for (let i = 0; i < path.length - 1; i++) {
-                        if ((d.source === path[i] && d.target === path[i+1]) ||
-                            (d.target === path[i] && d.source === path[i+1])) {
-                            return true;
-                        }
-                    }
-                    return false;
-                });
+        async function animateSearch(searchSteps, animationSpeed) {
+            for (const step of searchSteps) {
+                switch (step.type) {
+                    case 'visit':
+                        svg.selectAll(".node")
+                            .filter(d => d === step.node)
+                            .classed("current", true)
+                            .classed("visited", true);
+                        break;
+                    case 'explore':
+                        svg.selectAll(".link")
+                            .filter(d => (d.source === step.source && d.target === step.target) ||
+                                         (d.source === step.target && d.target === step.source))
+                            .classed("searched", true);
+                        break;
+                    case 'backtrack':
+                        svg.selectAll(".node")
+                            .filter(d => d === step.node)
+                            .classed("current", false);
+                        break;
+                    case 'pathHighlight':
+                        svg.selectAll(".link")
+                            .filter(d => (d.source === step.source && d.target === step.target) ||
+                                         (d.source === step.target && d.target === step.source))
+                            .classed("searched", true)
+                            .style("stroke", "#00ff00")
+                            .style("stroke-width", 4);
+                        break;
+                }
+                await new Promise(resolve => setTimeout(resolve, animationSpeed));
+            }
         }
 
         function resetSearch() {
-            svg.selectAll(".node").classed("searched", false);
-            svg.selectAll(".link").classed("searched", false);
+            svg.selectAll(".node")
+                .classed("current", false)
+                .classed("visited", false);
+            svg.selectAll(".link")
+                .classed("searched", false)
+                .style("stroke", null)
+                .style("stroke-width", null);
         }
 
         generateRandomGraph();
