@@ -93,6 +93,7 @@
                 <option value="dfs">DFS (Recursive)</option>
                 <option value="iterativeDfs">DFS (Iterative)</option>
                 <option value="bfs">BFS</option>
+                <option value="iterativeBfs">BFS (Iterative)</option>
             </select>
             <label for="animationSpeed">Animation Speed (ms):</label>
             <input type="number" id="animationSpeed" value="500" min="100" max="2000" step="100">
@@ -279,7 +280,49 @@
                 .style("opacity", 1);
         }
 
-        async function performSearch() {
+
+        function iterativeBfs(startNode, searchNode) {
+    const queue = [startNode];
+    const visited = new Set([startNode]);
+    const searchSteps = [];
+    const parent = new Map();
+
+    while (queue.length > 0) {
+        const node = queue.shift();
+        searchSteps.push({type: 'visit', node: node});
+
+        if (node === searchNode) {
+            const path = [];
+            let current = node;
+            while (current !== startNode) {
+                path.unshift(current);
+                current = parent.get(current);
+            }
+            path.unshift(startNode);
+
+            for (let i = 0; i < path.length - 1; i++) {
+                searchSteps.push({type: 'pathHighlight', source: path[i], target: path[i+1]});
+            }
+            return searchSteps;
+        }
+
+        const neighbors = links
+            .filter(l => l.source === node || l.target === node)
+            .map(l => l.source === node ? l.target : l.source);
+
+        for (const neighbor of neighbors) {
+            if (!visited.has(neighbor)) {
+                visited.add(neighbor);
+                parent.set(neighbor, node);
+                queue.push(neighbor);
+                searchSteps.push({type: 'explore', source: node, target: neighbor});
+            }
+        }
+    }
+
+    return null;
+}        
+async function performSearch() {
     isSearching = true;
     simulation.stop();
     resetSearch();
@@ -309,6 +352,9 @@
         case "bfs":
             searchSteps = bfs(startNode, searchNode);
             break;
+        case "iterativeBfs":
+            searchSteps = iterativeBfs(startNode, searchNode);
+            break;
     }
 
     if (searchSteps) {
@@ -321,6 +367,8 @@
 
     isSearching = false;
 }
+
+
 
         function dfs(startNode, searchNode) {
             const visited = new Set();
