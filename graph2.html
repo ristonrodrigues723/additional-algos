@@ -88,8 +88,10 @@
             <input type="text" id="startNode" placeholder="A">
             <label for="searchNode">Search Node:</label>
             <input type="text" id="searchNode" placeholder="B">
+            
             <select id="searchMethod">
-                <option value="dfs">DFS</option>
+                <option value="dfs">DFS (Recursive)</option>
+                <option value="iterativeDfs">DFS (Iterative)</option>
                 <option value="bfs">BFS</option>
             </select>
             <label for="animationSpeed">Animation Speed (ms):</label>
@@ -185,6 +187,53 @@
             node.on("mouseover", highlightConnections)
                 .on("mouseout", resetHighlight);
         }
+        function iterativeDfs(startNode, searchNode) {
+    const stack = [startNode];
+    const visited = new Set();
+    const searchSteps = [];
+    const parent = new Map();
+
+    while (stack.length > 0) {
+        const node = stack.pop();
+        
+        if (!visited.has(node)) {
+            visited.add(node);
+            searchSteps.push({type: 'visit', node: node});
+
+            if (node === searchNode) {
+                const path = [];
+                let current = node;
+                while (current !== startNode) {
+                    path.unshift(current);
+                    current = parent.get(current);
+                }
+                path.unshift(startNode);
+
+                for (let i = 0; i < path.length - 1; i++) {
+                    searchSteps.push({type: 'pathHighlight', source: path[i], target: path[i+1]});
+                }
+                return searchSteps;
+            }
+
+            const neighbors = links
+                .filter(l => l.source === node || l.target === node)
+                .map(l => l.source === node ? l.target : l.source);
+
+            for (const neighbor of neighbors.reverse()) {
+                if (!visited.has(neighbor)) {
+                    stack.push(neighbor);
+                    parent.set(neighbor, node);
+                    searchSteps.push({type: 'explore', source: node, target: neighbor});
+                }
+            }
+        } else {
+            searchSteps.push({type: 'backtrack', node: node});
+        }
+    }
+
+    return null;
+}
+
 
         function dragstarted(event, d) {
             if (!nodeDraggingEnabled || isSearching) return;
@@ -231,41 +280,47 @@
         }
 
         async function performSearch() {
-            isSearching = true;
-            simulation.stop();
-            resetSearch();
+    isSearching = true;
+    simulation.stop();
+    resetSearch();
 
-            const startNodeLabel = document.getElementById("startNode").value.toUpperCase();
-            const searchNodeLabel = document.getElementById("searchNode").value.toUpperCase();
-            const searchMethod = document.getElementById("searchMethod").value;
-            const animationSpeed = parseInt(document.getElementById("animationSpeed").value);
+    const startNodeLabel = document.getElementById("startNode").value.toUpperCase();
+    const searchNodeLabel = document.getElementById("searchNode").value.toUpperCase();
+    const searchMethod = document.getElementById("searchMethod").value;
+    const animationSpeed = parseInt(document.getElementById("animationSpeed").value);
 
-            const startNode = nodes.find(n => n.label === startNodeLabel);
-            const searchNode = nodes.find(n => n.label === searchNodeLabel);
+    const startNode = nodes.find(n => n.label === startNodeLabel);
+    const searchNode = nodes.find(n => n.label === searchNodeLabel);
 
-            if (!startNode || !searchNode) {
-                alert("Invalid start or search node");
-                isSearching = false;
-                return;
-            }
+    if (!startNode || !searchNode) {
+        alert("Invalid start or search node");
+        isSearching = false;
+        return;
+    }
 
-            let searchSteps;
-            if (searchMethod === "dfs") {
-                searchSteps = dfs(startNode, searchNode);
-            } else {
-                searchSteps = bfs(startNode, searchNode);
-            }
+    let searchSteps;
+    switch (searchMethod) {
+        case "dfs":
+            searchSteps = dfs(startNode, searchNode);
+            break;
+        case "iterativeDfs":
+            searchSteps = iterativeDfs(startNode, searchNode);
+            break;
+        case "bfs":
+            searchSteps = bfs(startNode, searchNode);
+            break;
+    }
 
-            if (searchSteps) {
-                console.log("Path found!");
-                await animateSearch(searchSteps, animationSpeed);
-            } else {
-                console.log("No path found");
-                alert("No path found");
-            }
+    if (searchSteps) {
+        console.log("Path found!");
+        await animateSearch(searchSteps, animationSpeed);
+    } else {
+        console.log("No path found");
+        alert("No path found");
+    }
 
-            isSearching = false;
-        }
+    isSearching = false;
+}
 
         function dfs(startNode, searchNode) {
             const visited = new Set();
