@@ -5,72 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Graph Visualization with Animated DFS and BFS</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f0f0f0;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        #graph {
-            border: 1px solid #ccc;
-            background-color: #fff;
-            display: block;
-            margin: 20px auto;
-        }
-        .node {
-            stroke: #fff;
-            stroke-width: 2px;
-            transition: all 0.3s ease;
-        }
-        .link {
-            stroke: #999;
-            stroke-opacity: 0.6;
-            transition: all 0.3s ease;
-        }
-        .controls {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        button, input, select {
-            margin: 5px;
-            padding: 10px 15px;
-            font-size: 14px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #nodeCount, #linkProbability, #startNode, #searchNode, #animationSpeed {
-            width: 50px;
-            background-color: white;
-            color: black;
-        }
-        .searched {
-            stroke: #ff0000;
-            stroke-width: 3px;
-        }
-        .current {
-            fill: #ff00ff !important;
-        }
-        .visited {
-            fill: #ffa500 !important;
-        }
+    body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    font-size: 30px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+#graph {
+    border: 1px solid #ccc;
+    background-color: #fff;
+    display: block;
+    margin: 20px auto;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.node {
+    stroke: #fff;
+    stroke-width: 2px;
+    transition: all 0.3s ease;
+}
+
+.link {
+    stroke: #2c3e50;
+    stroke-opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.controls {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+button, input, select {
+    margin: 5px;
+    padding: 10px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+#nodeCount, #linkProbability, #startNode, #searchNode, #animationSpeed {
+    width: 50px;
+    background-color: white;
+    color: black;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.searched {
+    stroke: #e74c3c;
+    stroke-width: 3px;
+}
+
+.current {
+    fill: #f1c40f !important;
+}
+
+.visited {
+    fill: #2ecc71 !important;
+}
     </style>
 </head>
 <body>
@@ -120,7 +140,7 @@
 
         function generateRandomGraph() {
             const nodeCount = parseInt(document.getElementById("nodeCount").value);
-            const linkProbability = parseFloat(document.getElementById("linkProbability").value);
+            const linkProbability = 0.3;
 
             nodes = Array.from({length: nodeCount}, (_, i) => ({id: i + 1, label: String.fromCharCode(65 + i)}));
             links = [];
