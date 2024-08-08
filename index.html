@@ -23,6 +23,47 @@
         }
 
         nav {
+    background-color: #2c3e50;
+    padding: 10px 0;
+}
+
+
+.nav-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    color: white;
+    font-size: 24px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.nav-links {
+    list-style-type: none;
+    display: flex;
+    gap: 20px;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    padding: 5px 10px;
+}
+
+.nav-links a:hover {
+    background-color: #34495e;
+}
+
+.nav-links a.active {
+    background-color: #3498db;
+}
+        nav {
             background-color: #333;
             width: 100%;
             position: fixed;
@@ -230,6 +271,7 @@
         <ul>
             <li><a href="#">Home</a></li>
             <li><a href="s.html">Sudoku Solver</a></li>
+            <li><a href="graph2.html">Graph Traversak</a></li>
             <li><a href="index.html" class="active">Binary Tree BFS</a></li>
             <li><a href="dfs.html">Binary Tree DFS</a></li>
         </ul>
