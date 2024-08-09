@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brute Force Tree Visualization</title>
+    <style>
+        .node {
+            display: inline-block;
+            border: 1px solid black;
+            padding: 10px;
+            margin: 5px;
+            text-align: center;
+        }
+        .children {
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="tree"></div>
+
+    <script>
+        function createNode(value) {
+            const node = document.createElement('div');
+            node.className = 'node';
+            node.textContent = value;
+            return node;
+        }
+
+        function createTree(root) {
+            const treeDiv = document.getElementById('tree');
+            
+            function buildTree(node, parentElement) {
+                const nodeElement = createNode(node.value);
+                parentElement.appendChild(nodeElement);
+
+                if (node.children && node.children.length > 0) {
+                    const childrenDiv = document.createElement('div');
+                    childrenDiv.className = 'children';
+                    nodeElement.appendChild(childrenDiv);
+
+                    for (const child of node.children) {
+                        buildTree(child, childrenDiv);
+                    }
+                }
+            }
+
+            buildTree(root, treeDiv);
+        }
+
+        // Example tree structure
+        const tree = {
+            value: 'Root',
+            children: [
+                {
+                    value: 'A',
+                    children: [
+                        { value: 'A1' },
+                        { value: 'A2' }
+                    ]
+                },
+                {
+                    value: 'B',
+                    children: [
+                        { value: 'B1' },
+                        { value: 'B2' },
+                        { value: 'B3' }
+                    ]
+                }
+            ]
+        };
+
+        createTree(tree);
+    </script>
+</body>
+</html>
