@@ -3,58 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Tree Visualization</title>
+    <title>Brute Force Tree Visualization</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .tree {
+            display: flex;
+            justify-content: center;
         }
         .node {
-            display: inline-block;
-            border: 2px solid #333;
-            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 10px;
-            margin: 5px;
-            text-align: center;
-            background-color: #f0f0f0;
-            transition: all 0.3s;
         }
-        .node:hover {
-            background-color: #e0e0e0;
-            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        .node-content {
+            border: 2px solid #333;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        .node-content:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
         }
         .children {
-            margin-left: 30px;
-            padding-left: 10px;
-            border-left: 1px dashed #999;
+            display: flex;
+            justify-content: center;
         }
-        .collapsed > .children {
-            display: none;
+        .connector {
+            width: 2px;
+            height: 20px;
+            background-color: #333;
         }
-        .node button {
-            margin-left: 5px;
+        .current {
+            background-color: #ffcc00;
+        }
+        .visited {
+            background-color: #90ee90;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
             cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
         }
-        #controls {
-            margin-bottom: 20px;
+        button:hover {
+            background-color: #45a049;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <div id="controls">
-        <button id="expandAll">Expand All</button>
-        <button id="collapseAll">Collapse All</button>
-        <input type="text" id="searchInput" placeholder="Search nodes">
-        <button id="searchBtn">Search</button>
+    <div class="container">
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="Enter search value">
+            <button id="searchBtn">Search</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+        <div id="tree" class="tree"></div>
     </div>
-    <div id="tree"></div>
 
     <script>
         function createNode(value) {
             const node = document.createElement('div');
             node.className = 'node';
             node.innerHTML = `
-                <span>${value}</span>
-                <button class="toggleBtn">+</button>
+                <div class="node-content">${value}</div>
+                <div class="connector"></div>
+                <div class="children"></div>
             `;
             return node;
         }
@@ -62,58 +109,61 @@
         function createTree(root) {
             const treeDiv = document.getElementById('tree');
             
-            function buildTree(node, parentElement) {
+            function buildTree(node) {
                 const nodeElement = createNode(node.value);
-                parentElement.appendChild(nodeElement);
-
+                
                 if (node.children && node.children.length > 0) {
-                    const childrenDiv = document.createElement('div');
-                    childrenDiv.className = 'children';
-                    nodeElement.appendChild(childrenDiv);
-
+                    const childrenContainer = nodeElement.querySelector('.children');
                     for (const child of node.children) {
-                        buildTree(child, childrenDiv);
+                        const childElement = buildTree(child);
+                        childrenContainer.appendChild(childElement);
                     }
-
-                    const toggleBtn = nodeElement.querySelector('.toggleBtn');
-                    toggleBtn.addEventListener('click', () => {
-                        nodeElement.classList.toggle('collapsed');
-                        toggleBtn.textContent = nodeElement.classList.contains('collapsed') ? '+' : '-';
-                    });
                 } else {
-                    nodeElement.querySelector('.toggleBtn').style.display = 'none';
+                    nodeElement.querySelector('.connector').style.display = 'none';
                 }
+
+                return nodeElement;
             }
 
-            buildTree(root, treeDiv);
+            treeDiv.appendChild(buildTree(root));
         }
 
-        function expandAll() {
-            document.querySelectorAll('.node').forEach(node => {
-                node.classList.remove('collapsed');
-                const toggleBtn = node.querySelector('.toggleBtn');
-                if (toggleBtn) toggleBtn.textContent = '-';
+        function bruteForceSearch(node, target) {
+            const nodeContent = node.querySelector('.node-content');
+            nodeContent.classList.add('current');
+
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const value = nodeContent.textContent;
+                    nodeContent.classList.remove('current');
+                    nodeContent.classList.add('visited');
+
+                    if (value === target) {
+                        resolve(true);
+                    } else {
+                        const children = node.querySelector('.children').children;
+                        if (children.length > 0) {
+                            resolve(searchChildren(Array.from(children), target));
+                        } else {
+                            resolve(false);
+                        }
+                    }
+                }, 500);
             });
         }
 
-        function collapseAll() {
-            document.querySelectorAll('.node').forEach(node => {
-                if (node.querySelector('.children')) {
-                    node.classList.add('collapsed');
-                    const toggleBtn = node.querySelector('.toggleBtn');
-                    if (toggleBtn) toggleBtn.textContent = '+';
+        async function searchChildren(children, target) {
+            for (const child of children) {
+                if (await bruteForceSearch(child, target)) {
+                    return true;
                 }
-            });
+            }
+            return false;
         }
 
-        function searchNodes(searchTerm) {
-            document.querySelectorAll('.node').forEach(node => {
-                const nodeText = node.querySelector('span').textContent;
-                if (nodeText.toLowerCase().includes(searchTerm.toLowerCase())) {
-                    node.style.backgroundColor = 'yellow';
-                } else {
-                    node.style.backgroundColor = '';
-                }
+        function resetTree() {
+            document.querySelectorAll('.node-content').forEach(node => {
+                node.classList.remove('current', 'visited');
             });
         }
 
@@ -141,12 +191,14 @@
 
         createTree(tree);
 
-        document.getElementById('expandAll').addEventListener('click', expandAll);
-        document.getElementById('collapseAll').addEventListener('click', collapseAll);
-        document.getElementById('searchBtn').addEventListener('click', () => {
-            const searchTerm = document.getElementById('searchInput').value;
-            searchNodes(searchTerm);
+        document.getElementById('searchBtn').addEventListener('click', async () => {
+            const searchValue = document.getElementById('searchInput').value;
+            resetTree();
+            const result = await bruteForceSearch(document.querySelector('.node'), searchValue);
+            alert(result ? 'Value found!' : 'Value not found.');
         });
+
+        document.getElementById('resetBtn').addEventListener('click', resetTree);
     </script>
 </body>
 </html>
