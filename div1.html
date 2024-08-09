@@ -3,28 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brute Force Tree Visualization</title>
+    <title>Enhanced Tree Visualization</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
         .node {
             display: inline-block;
-            border: 1px solid black;
+            border: 2px solid #333;
+            border-radius: 5px;
             padding: 10px;
             margin: 5px;
             text-align: center;
+            background-color: #f0f0f0;
+            transition: all 0.3s;
+        }
+        .node:hover {
+            background-color: #e0e0e0;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
         }
         .children {
-            margin-left: 20px;
+            margin-left: 30px;
+            padding-left: 10px;
+            border-left: 1px dashed #999;
+        }
+        .collapsed > .children {
+            display: none;
+        }
+        .node button {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        #controls {
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
+    <div id="controls">
+        <button id="expandAll">Expand All</button>
+        <button id="collapseAll">Collapse All</button>
+        <input type="text" id="searchInput" placeholder="Search nodes">
+        <button id="searchBtn">Search</button>
+    </div>
     <div id="tree"></div>
 
     <script>
         function createNode(value) {
             const node = document.createElement('div');
             node.className = 'node';
-            node.textContent = value;
+            node.innerHTML = `
+                <span>${value}</span>
+                <button class="toggleBtn">+</button>
+            `;
             return node;
         }
 
@@ -43,10 +74,47 @@
                     for (const child of node.children) {
                         buildTree(child, childrenDiv);
                     }
+
+                    const toggleBtn = nodeElement.querySelector('.toggleBtn');
+                    toggleBtn.addEventListener('click', () => {
+                        nodeElement.classList.toggle('collapsed');
+                        toggleBtn.textContent = nodeElement.classList.contains('collapsed') ? '+' : '-';
+                    });
+                } else {
+                    nodeElement.querySelector('.toggleBtn').style.display = 'none';
                 }
             }
 
             buildTree(root, treeDiv);
+        }
+
+        function expandAll() {
+            document.querySelectorAll('.node').forEach(node => {
+                node.classList.remove('collapsed');
+                const toggleBtn = node.querySelector('.toggleBtn');
+                if (toggleBtn) toggleBtn.textContent = '-';
+            });
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.node').forEach(node => {
+                if (node.querySelector('.children')) {
+                    node.classList.add('collapsed');
+                    const toggleBtn = node.querySelector('.toggleBtn');
+                    if (toggleBtn) toggleBtn.textContent = '+';
+                }
+            });
+        }
+
+        function searchNodes(searchTerm) {
+            document.querySelectorAll('.node').forEach(node => {
+                const nodeText = node.querySelector('span').textContent;
+                if (nodeText.toLowerCase().includes(searchTerm.toLowerCase())) {
+                    node.style.backgroundColor = 'yellow';
+                } else {
+                    node.style.backgroundColor = '';
+                }
+            });
         }
 
         // Example tree structure
@@ -57,7 +125,7 @@
                     value: 'A',
                     children: [
                         { value: 'A1' },
-                        { value: 'A2' }
+                        { value: 'A2', children: [{ value: 'A2.1' }, { value: 'A2.2' }] }
                     ]
                 },
                 {
@@ -65,13 +133,20 @@
                     children: [
                         { value: 'B1' },
                         { value: 'B2' },
-                        { value: 'B3' }
+                        { value: 'B3', children: [{ value: 'B3.1' }, { value: 'B3.2' }] }
                     ]
                 }
             ]
         };
 
         createTree(tree);
+
+        document.getElementById('expandAll').addEventListener('click', expandAll);
+        document.getElementById('collapseAll').addEventListener('click', collapseAll);
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            const searchTerm = document.getElementById('searchInput').value;
+            searchNodes(searchTerm);
+        });
     </script>
 </body>
 </html>
