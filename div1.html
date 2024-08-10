@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brute Force Tree Visualization</title>
+    <title>Brute Force Tree Search Visualization</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -20,6 +20,9 @@
             align-items: center;
         }
         .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
             margin-bottom: 20px;
         }
         .tree {
@@ -63,6 +66,9 @@
         .visited {
             background-color: #90ee90;
         }
+        .found {
+            background-color: #ff6347;
+        }
         button {
             padding: 10px 15px;
             font-size: 16px;
@@ -82,6 +88,13 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
+        .stats {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        #speedSlider {
+            width: 200px;
+        }
     </style>
 </head>
 <body>
@@ -90,8 +103,14 @@
             <input type="text" id="searchInput" placeholder="Enter search value">
             <button id="searchBtn">Search</button>
             <button id="resetBtn">Reset</button>
+            <input type="range" id="speedSlider" min="100" max="2000" value="500">
+            <button id="stepBtn">Step</button>
         </div>
         <div id="tree" class="tree"></div>
+        <div class="stats">
+            <p>Nodes checked: <span id="nodesChecked">0</span></p>
+            <p>Search time: <span id="searchTime">0</span> ms</p>
+        </div>
     </div>
 
     <script>
@@ -128,43 +147,58 @@
             treeDiv.appendChild(buildTree(root));
         }
 
-        function bruteForceSearch(node, target) {
-            const nodeContent = node.querySelector('.node-content');
-            nodeContent.classList.add('current');
+        let searchSpeed = 500;
+        let nodesChecked = 0;
+        let searchStartTime;
+        let allNodes = [];
+        let currentNodeIndex = -1;
+        let searchTarget = '';
+        let searchInterval;
 
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    const value = nodeContent.textContent;
-                    nodeContent.classList.remove('current');
-                    nodeContent.classList.add('visited');
-
-                    if (value === target) {
-                        resolve(true);
-                    } else {
-                        const children = node.querySelector('.children').children;
-                        if (children.length > 0) {
-                            resolve(searchChildren(Array.from(children), target));
-                        } else {
-                            resolve(false);
-                        }
-                    }
-                }, 500);
-            });
+        function resetStats() {
+            nodesChecked = 0;
+            document.getElementById('nodesChecked').textContent = nodesChecked;
+            document.getElementById('searchTime').textContent = '0';
         }
 
-        async function searchChildren(children, target) {
-            for (const child of children) {
-                if (await bruteForceSearch(child, target)) {
-                    return true;
-                }
+        function bruteForceStep() {
+            if (currentNodeIndex >= allNodes.length - 1) {
+                clearInterval(searchInterval);
+                const searchEndTime = Date.now();
+                document.getElementById('searchTime').textContent = searchEndTime - searchStartTime;
+                alert('Search completed. Value not found.');
+                return;
             }
-            return false;
+
+            currentNodeIndex++;
+            const node = allNodes[currentNodeIndex];
+            const nodeContent = node.querySelector('.node-content');
+            
+            nodeContent.classList.add('current');
+            setTimeout(() => {
+                nodeContent.classList.remove('current');
+                nodeContent.classList.add('visited');
+            }, searchSpeed / 2);
+
+            nodesChecked++;
+            document.getElementById('nodesChecked').textContent = nodesChecked;
+
+            if (nodeContent.textContent === searchTarget) {
+                clearInterval(searchInterval);
+                nodeContent.classList.add('found');
+                const searchEndTime = Date.now();
+                document.getElementById('searchTime').textContent = searchEndTime - searchStartTime;
+                alert('Value found!');
+            }
         }
 
         function resetTree() {
+            clearInterval(searchInterval);
             document.querySelectorAll('.node-content').forEach(node => {
-                node.classList.remove('current', 'visited');
+                node.classList.remove('current', 'visited', 'found');
             });
+            resetStats();
+            currentNodeIndex = -1;
         }
 
         // Example tree structure
@@ -190,15 +224,29 @@
         };
 
         createTree(tree);
+        allNodes = document.querySelectorAll('.node');
 
-        document.getElementById('searchBtn').addEventListener('click', async () => {
-            const searchValue = document.getElementById('searchInput').value;
+        document.getElementById('searchBtn').addEventListener('click', () => {
             resetTree();
-            const result = await bruteForceSearch(document.querySelector('.node'), searchValue);
-            alert(result ? 'Value found!' : 'Value not found.');
+            searchTarget = document.getElementById('searchInput').value;
+            searchStartTime = Date.now();
+            searchInterval = setInterval(bruteForceStep, searchSpeed);
         });
 
         document.getElementById('resetBtn').addEventListener('click', resetTree);
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            searchSpeed = parseInt(e.target.value);
+            if (searchInterval) {
+                clearInterval(searchInterval);
+                searchInterval = setInterval(bruteForceStep, searchSpeed);
+            }
+        });
+
+        document.getElementById('stepBtn').addEventListener('click', () => {
+            clearInterval(searchInterval);
+            bruteForceStep();
+        });
     </script>
 </body>
 </html>
