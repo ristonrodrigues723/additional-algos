@@ -5,6 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brute Force Tree Search Visualization</title>
     <style>
+        .connector {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    width: 2px;
+    height: 20px;
+    background-color: #000;
+}
+
+.connector.left {
+    transform: rotate(-45deg);
+    transform-origin: bottom left;
+}
+
+.connector.right {
+    transform: rotate(45deg);
+    transform-origin: bottom right;
+}
+
+.children {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    margin: 0 10px;
+}
+        .tree {
+        display: flex;
+        justify-content: center;
+        padding-top: 20px;
+    }
+    .node {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+    .children {
+        display: flex;
+        justify-content: center;
+    }
+    .connector {
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        width: 2px;
+        height: 20px;
+        background-color: #333;
+    }
+    .node:first-child > .connector {
+        display: none;
+    }
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -110,6 +168,62 @@
         let searchSpeed = 500;
         let searchStartTime;
         let nodesChecked = 0;
+       
+        function createNode(node) {
+    const nodeElement = document.createElement('div');
+    nodeElement.className = 'node';
+
+    const nodeContent = document.createElement('div');
+    nodeContent.className = 'node-content';
+    nodeContent.textContent = node.value;
+    nodeElement.appendChild(nodeContent);
+
+    if (node.children && node.children.length > 0) {
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'children';
+
+        node.children.forEach((child, index) => {
+            const childNode = createNode(child);
+            const connector = document.createElement('div');
+            connector.className = 'connector';
+            
+            // Add left or right class to the connector
+            if (index === 0) {
+                connector.classList.add('left');
+            } else if (index === node.children.length - 1) {
+                connector.classList.add('right');
+            }
+            
+            childNode.insertBefore(connector, childNode.firstChild);
+            childrenContainer.appendChild(childNode);
+        });
+
+        nodeElement.appendChild(childrenContainer);
+    }
+
+    return nodeElement;
+}
+    function generateRandomTree(depth = 3, maxChildren = 3) {
+        function generateNode(currentDepth) {
+            if (currentDepth === 0) {
+                return { value: Math.floor(Math.random() * 100).toString() };
+            }
+            
+            const node = {
+                value: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
+                children: []
+            };
+            
+            const numChildren = Math.floor(Math.random() * maxChildren) + 1;
+            for (let i = 0; i < numChildren; i++) {
+                node.children.push(generateNode(currentDepth - 1));
+            }
+            
+            return node;
+        }
+
+        return generateNode(depth);
+    }
 
         function createNode(node) {
             const nodeElement = document.createElement('div');
