@@ -145,12 +145,8 @@
             <button id="resetBtn">Reset</button>
             <input type="range" id="speedSlider" min="100" max="2000" value="500">
             <button id="stepBtn">Step</button>
-            <select id="treeDepth">
-                <option value="2">Depth 2</option>
-                <option value="3" selected>Depth 3</option>
-                <option value="4">Depth 4</option>
-            </select>
-            <button id="generateTreeBtn">Generate New Tree</button>
+            <input type="number" id="treeDepth" value="3" min="1" max="5">
+            <button id="generateTreeBtn">Generate Tree</button>
         </div>
         <div id="tree" class="tree"></div>
         <div class="stats">
@@ -159,208 +155,33 @@
         </div>
     </div>
 
-    <script>
-        let currentTree;
-        let allNodes;
-        let currentNodeIndex = -1;
-        let searchTarget;
-        let searchInterval;
-        let searchSpeed = 500;
-        let searchStartTime;
-        let nodesChecked = 0;
-        let currentSearchMethod = 'bruteForce';
-
-document.getElementById('toggleSearchBtn').addEventListener('click', () => {
-    currentSearchMethod = currentSearchMethod === 'bruteForce' ? 'depthFirst' : 'bruteForce';
-    alert(`Search method switched to ${currentSearchMethod === 'bruteForce' ? 'Brute Force' : 'Depth-First'}`);
-});
-
-document.getElementById('searchBtn').addEventListener('click', () => {
-    if (currentSearchMethod === 'bruteForce') {
-        resetTree();
-        searchTarget = document.getElementById('searchInput').value;
-        searchStartTime = Date.now();
-        searchInterval = setInterval(bruteForceSearch, searchSpeed);
-    } else {
-        startDepthFirstSearch();
-    }
-});
-        function createNode(node) {
-    const nodeElement = document.createElement('div');
-    nodeElement.className = 'node';
-
-    const nodeContent = document.createElement('div');
-    nodeContent.className = 'node-content';
-    nodeContent.textContent = node.value;
-    nodeElement.appendChild(nodeContent);
-
-    if (node.children && node.children.length > 0) {
-        const childrenContainer = document.createElement('div');
-        childrenContainer.className = 'children';
-
-        const horizontalLine = document.createElement('div');
-        horizontalLine.className = 'horizontal-line';
-        childrenContainer.appendChild(horizontalLine);
-
-        node.children.forEach((child, index) => {
-            const childNode = createNode(child);
-            const connector = document.createElement('div');
-            connector.className = 'connector';
-            
-            if (index === 0) {
-                connector.classList.add('left');
-            } else if (index === node.children.length - 1) {
-                connector.classList.add('right');
-            }
-            
-            childNode.insertBefore(connector, childNode.firstChild);
-            childrenContainer.appendChild(childNode);
-        });
-
-        nodeElement.appendChild(childrenContainer);
-    }
-
-    return nodeElement;
-}
-    const nodeElement = document.createElement('div');
-    nodeElement.className = 'node';
-
-    const nodeContent = document.createElement('div');
-    nodeContent.className = 'node-content';
-    nodeContent.textContent = node.value;
-    nodeElement.appendChild(nodeContent);
-
-    if (node.children && node.children.length > 0) {
-        const childrenContainer = document.createElement('div');
-        childrenContainer.className = 'children';
-
-        node.children.forEach((child, index) => {
-            const childNode = createNode(child);
-            const connector = document.createElement('div');
-            connector.className = 'connector';
-            
-            // Add left or right class to the connector
-            if (index === 0) {
-                connector.classList.add('left');
-            } else if (index === node.children.length - 1) {
-                connector.classList.add('right');
-            }
-            
-            childNode.insertBefore(connector, childNode.firstChild);
-            childrenContainer.appendChild(childNode);
-        });
-
-        nodeElement.appendChild(childrenContainer);
-    }
-
-    return nodeElement;
-}
-function depthFirstSearch(node, target) {
-    const nodeContent = node.querySelector('.node-content');
-    nodeContent.classList.add('current');
-    nodesChecked++;
-    document.getElementById('nodesChecked').textContent = nodesChecked;
-
-    setTimeout(() => {
-        nodeContent.classList.remove('current');
-        nodeContent.classList.add('visited');
-
-        if (nodeContent.textContent === target) {
-            nodeContent.classList.add('found');
-            const searchEndTime = Date.now();
-            document.getElementById('searchTime').textContent = searchEndTime - searchStartTime;
-            alert('Value found!');
-            return true;
-        }
-
-        const children = node.querySelectorAll(':scope > .children > .node');
-        for (let child of children) {
-            if (depthFirstSearch(child, target)) {
-                return true;
-            }
-        }
-
-        return false;
-    }, searchSpeed);
-
-    return false;
-}
-
-function startDepthFirstSearch() {
-    resetTree();
-    searchTarget = document.getElementById('searchInput').value;
-    searchStartTime = Date.now();
-    const rootNode = document.querySelector('#tree > .node');
-    if (!depthFirstSearch(rootNode, searchTarget)) {
-        setTimeout(() => {
-            const searchEndTime = Date.now();
-            document.getElementById('searchTime').textContent = searchEndTime - searchStartTime;
-            alert('Search completed. Value not found.');
-        }, searchSpeed * allNodes.length);
-    }
-}
-    function generateRandomTree(depth = 3, maxChildren = 3) {
-        function generateNode(currentDepth) {
-            if (currentDepth === 0) {
-                return { value: Math.floor(Math.random() * 100).toString() };
-            }
-            
-            const node = {
-                value: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
-                children: []
-            };
-            
-            const numChildren = Math.floor(Math.random() * maxChildren) + 1;
-            for (let i = 0; i < numChildren; i++) {
-                node.children.push(generateNode(currentDepth - 1));
-            }
-            
-            return node;
-        }
-
-        return generateNode(depth);
-    }
-
-        function createNode(node) {
-            const nodeElement = document.createElement('div');
-            nodeElement.className = 'node';
-
-            const nodeContent = document.createElement('div');
-            nodeContent.className = 'node-content';
-            nodeContent.textContent = node.value;
-            nodeElement.appendChild(nodeContent);
-
-            if (node.children && node.children.length > 0) {
-                const childrenContainer = document.createElement('div');
-                childrenContainer.className = 'children';
-
-                node.children.forEach(child => {
-                    const childNode = createNode(child);
-                    const connector = document.createElement('div');
-                    connector.className = 'connector';
-                    childNode.insertBefore(connector, childNode.firstChild);
-                    childrenContainer.appendChild(childNode);
-                });
-
-                nodeElement.appendChild(childrenContainer);
-            }
-
-            return nodeElement;
-        }
-
-        function createTree(tree) {
+    <script>let currentTree;
+        let svg;
+        let simulation;
+        
+        function initializeTree() {
             const treeContainer = document.getElementById('tree');
             treeContainer.innerHTML = '';
-            treeContainer.appendChild(createNode(tree));
+        
+            svg = d3.select(treeContainer)
+                .append("svg")
+                .attr("width", "100%")
+                .attr("height", "400")
+                .attr("id", "tree-svg");
+        
+            const depth = parseInt(document.getElementById('treeDepth').value);
+            currentTree = generateRandomTree(depth);
+            drawTree(currentTree);
         }
-
+        
         function generateRandomTree(depth = 3, maxChildren = 3) {
             function generateNode(currentDepth) {
                 if (currentDepth === 0) {
-                    return { value: Math.floor(Math.random() * 100).toString() };
+                    return { id: Math.random(), value: Math.floor(Math.random() * 100).toString() };
                 }
                 
                 const node = {
+                    id: Math.random(),
                     value: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
                     children: []
                 };
@@ -372,86 +193,201 @@ function startDepthFirstSearch() {
                 
                 return node;
             }
-
+        
             return generateNode(depth);
         }
+        
+        function drawTree(tree) {
+            const nodes = d3.hierarchy(tree);
+            const links = nodes.links();
+        
+            const width = svg.node().getBoundingClientRect().width;
+            const height = 400;
+        
+            const treeLayout = d3.tree().size([width - 40, height - 40]);
+            treeLayout(nodes);
+        
+            simulation = d3.forceSimulation(nodes.descendants())
+                .force("link", d3.forceLink(links).id(d => d.id).distance(70))
+                .force("charge", d3.forceManyBody().strength(-500))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .on("tick", ticked);
+        
+            const link = svg.append("g")
+                .selectAll("line")
+                .data(links)
+                .enter().append("line")
+                .attr("class", "link");
+        
+            const node = svg.append("g")
+                .selectAll("circle")
+                .data(nodes.descendants())
+                .enter().append("circle")
+                .attr("class", "node")
+                .attr("r", 20)
+                .attr("fill", d => d3.schemeCategory10[d.depth % 10])
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+        
+            const label = svg.append("g")
+                .selectAll("text")
+                .data(nodes.descendants())
+                .enter().append("text")
+                .text(d => d.data.value)
+                .attr("text-anchor", "middle")
+                .attr("dy", ".35em");
+        
+            function ticked() {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+        
+                node
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y);
+        
+                label
+                    .attr("x", d => d.x)
+                    .attr("y", d => d.y);
+            }
+        
+            node.on("mouseover", highlightConnections)
+                .on("mouseout", resetHighlight);
+        }
+        
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+        
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+        
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+        
+        function highlightConnections(event, d) {
+            d3.selectAll(".link")
+                .style("stroke", l => (l.source === d || l.target === d) ? "#ff0000" : "#999")
+                .style("stroke-width", l => (l.source === d || l.target === d) ? 2 : 1);
+        
+            d3.selectAll(".node")
+                .style("opacity", n => (n === d || n.parent === d || d.parent === n) ? 1 : 0.3);
+        }
+        
+        function resetHighlight() {
+            d3.selectAll(".link")
+                .style("stroke", "#999")
+                .style("stroke-width", 1);
+        
+            d3.selectAll(".node")
+                .style("opacity", 1);
+        }
+        // ... (previous code remains the same)
 
-        function bruteForceSearch() {
-            if (currentNodeIndex >= allNodes.length - 1) {
-                clearInterval(searchInterval);
-                const searchEndTime = Date.now();
-                document.getElementById('searchTime').textContent = searchEndTime - searchStartTime;
-                alert('Search completed. Value not found.');
-                return;
+let isSearching = false;
+
+function bruteForceSearch(startNode, targetValue) {
+    const searchSteps = [];
+    const queue = [startNode];
+    const visited = new Set();
+
+    while (queue.length > 0) {
+        const node = queue.shift();
+        if (!visited.has(node)) {
+            visited.add(node);
+            searchSteps.push({ type: 'visit', node: node });
+
+            if (node.data.value === targetValue) {
+                searchSteps.push({ type: 'found', node: node });
+                return searchSteps;
             }
 
-            currentNodeIndex++;
-            const node = allNodes[currentNodeIndex];
-            const nodeContent = node.querySelector('.node-content');
-            
-            nodeContent.classList.add('current');
-            setTimeout(() => {
-                nodeContent.classList.remove('current');
-                nodeContent.classList.add('visited');
-            }, searchSpeed / 2);
-
-            nodesChecked++;
-            document.getElementById('nodesChecked').textContent = nodesChecked;
-
-            if (nodeContent.textContent === searchTarget) {
-                clearInterval(searchInterval);
-                nodeContent.classList.add('found');
-                const searchEndTime = Date.now();
-                document.getElementById('searchTime').textContent = searchEndTime - searchStartTime;
-                alert('Value found!');
+            if (node.children) {
+                node.children.forEach(child => {
+                    if (!visited.has(child)) {
+                        queue.push(child);
+                        searchSteps.push({ type: 'explore', source: node, target: child });
+                    }
+                });
             }
         }
+    }
 
-        function resetTree() {
-            clearInterval(searchInterval);
-            document.querySelectorAll('.node-content').forEach(node => {
-                node.classList.remove('current', 'visited', 'found');
-            });
-            nodesChecked = 0;
-            document.getElementById('nodesChecked').textContent = nodesChecked;
-            document.getElementById('searchTime').textContent = '0';
-            currentNodeIndex = -1;
+    return searchSteps;
+}
+
+async function performSearch() {
+    isSearching = true;
+    resetSearch();
+
+    const targetValue = document.getElementById("searchNode").value;
+    const animationSpeed = parseInt(document.getElementById("animationSpeed").value);
+
+    const rootNode = d3.hierarchy(currentTree);
+    const searchSteps = bruteForceSearch(rootNode, targetValue);
+
+    if (searchSteps.length > 0 && searchSteps[searchSteps.length - 1].type === 'found') {
+        await animateSearch(searchSteps, animationSpeed);
+        console.log("Value found!");
+    } else {
+        console.log("Value not found");
+        alert("Value not found");
+    }
+
+    isSearching = false;
+}
+
+async function animateSearch(searchSteps, animationSpeed) {
+    for (const step of searchSteps) {
+        switch (step.type) {
+            case 'visit':
+                svg.selectAll(".node")
+                    .filter(d => d === step.node)
+                    .classed("current", true)
+                    .classed("visited", true);
+                break;
+            case 'explore':
+                svg.selectAll(".link")
+                    .filter(d => (d.source === step.source && d.target === step.target) ||
+                                 (d.source === step.target && d.target === step.source))
+                    .classed("searched", true);
+                break;
+            case 'found':
+                svg.selectAll(".node")
+                    .filter(d => d === step.node)
+                    .classed("found", true);
+                break;
         }
+        await new Promise(resolve => setTimeout(resolve, animationSpeed));
+    }
+}
 
-        function initializeTree() {
-            const depth = parseInt(document.getElementById('treeDepth').value);
-            currentTree = generateRandomTree(depth);
-            createTree(currentTree);
-            allNodes = document.querySelectorAll('.node');
-            resetTree();
-        }
+function resetSearch() {
+    svg.selectAll(".node")
+        .classed("current", false)
+        .classed("visited", false)
+        .classed("found", false);
+    svg.selectAll(".link")
+        .classed("searched", false);
+}
 
+
+document.getElementById('searchBtn').addEventListener('click', performSearch);
+document.getElementById('resetBtn').addEventListener('click', resetSearch);
+document.getElementById('generateTreeBtn').addEventListener('click', initializeTree);
+        
         // Initialize the tree
-        initializeTree();
-
-        document.getElementById('searchBtn').addEventListener('click', () => {
-            resetTree();
-            searchTarget = document.getElementById('searchInput').value;
-            searchStartTime = Date.now();
-            searchInterval = setInterval(bruteForceSearch, searchSpeed);
-        });
-
-        document.getElementById('resetBtn').addEventListener('click', resetTree);
-
-        document.getElementById('speedSlider').addEventListener('input', (e) => {
-            searchSpeed = parseInt(e.target.value);
-            if (searchInterval) {
-                clearInterval(searchInterval);
-                searchInterval = setInterval(bruteForceSearch, searchSpeed);
-            }
-        });
-
-        document.getElementById('stepBtn').addEventListener('click', () => {
-            clearInterval(searchInterval);
-            bruteForceSearch();
-        });
-
-        document.getElementById('generateTreeBtn').addEventListener('click', initializeTree);
-    </script>
+        initializeTree(); </script>
 </body>
 </html>
