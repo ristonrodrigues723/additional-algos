@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -113,42 +115,49 @@
         </div>
     </div>
 
-    <script>// Add these variables at the beginning of your script
+    <script>
         let currentTree;
-        let searchAlgorithm = 'bfs';
-        let searchHistory = [];
-        
-        // Update the HTML to include new controls
-        document.querySelector('.controls').innerHTML += `
-            <select id="searchAlgorithm">
-                <option value="bfs">Breadth-First Search</option>
-                <option value="dfs">Depth-First Search</option>
-            </select>
-            <input type="number" id="treeDepth" value="3" min="1" max="5" placeholder="Tree Depth">
-            <input type="number" id="maxChildren" value="3" min="1" max="5" placeholder="Max Children">
-            <button id="generateTreeBtn">Generate New Tree</button>
-            <button id="customTreeBtn">Enter Custom Tree</button>
-            <div id="zoomControls">
-                <button id="zoomIn">+</button>
-                <button id="zoomOut">-</button>
-                <button id="resetZoom">Reset Zoom</button>
-            </div>
-        `;
-        
-        // Add a search history display
-        document.querySelector('.stats').innerHTML += `
-            <div id="searchHistory">
-                <h3>Search History</h3>
-                <ul id="historyList"></ul>
-            </div>
-        `;
-        
-        // Update the generateRandomTree function to use input values
-        function generateRandomTree() {
-            const depth = parseInt(document.getElementById('treeDepth').value);
-            const maxChildren = parseInt(document.getElementById('maxChildren').value);
-            return generateNode(depth);
-        
+        let allNodes;
+        let currentNodeIndex = -1;
+        let searchTarget;
+        let searchInterval;
+        let searchSpeed = 500;
+        let searchStartTime;
+        let nodesChecked = 0;
+
+        function createNode(node) {
+            const nodeElement = document.createElement('div');
+            nodeElement.className = 'node';
+
+            const nodeContent = document.createElement('div');
+            nodeContent.className = 'node-content';
+            nodeContent.textContent = node.value;
+            nodeElement.appendChild(nodeContent);
+
+            if (node.children && node.children.length > 0) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'children';
+
+                node.children.forEach(child => {
+                    const connector = document.createElement('div');
+                    connector.className = 'connector';
+                    childrenContainer.appendChild(connector);
+                    childrenContainer.appendChild(createNode(child));
+                });
+
+                nodeElement.appendChild(childrenContainer);
+            }
+
+            return nodeElement;
+        }
+
+        function createTree(tree) {
+            const treeContainer = document.getElementById('tree');
+            treeContainer.innerHTML = '';
+            treeContainer.appendChild(createNode(tree));
+        }
+
+        function generateRandomTree(depth = 3, maxChildren = 3) {
             function generateNode(currentDepth) {
                 if (currentDepth === 0) {
                     return { value: Math.floor(Math.random() * 100).toString() };
@@ -166,76 +175,11 @@
                 
                 return node;
             }
+
+            return generateNode(depth);
         }
-        
-        // Add custom tree input functionality
 
-
-        function highlightNode(value) {
-            const nodeElement = document.querySelector(`.node-content:contains('${value}')`);
-            if (nodeElement) {
-                nodeElement.classList.add('current');
-                setTimeout(() => {
-                    nodeElement.classList.remove('current');
-                    nodeElement.classList.add('visited');
-                }, searchSpeed / 2);
-            }
-            nodesChecked++;
-            document.getElementById('nodesChecked').textContent = nodesChecked;
-        }
-        
- 
-        document.getElementById('searchBtn').addEventListener('click', () => {
-            resetTree();
-            searchTarget = document.getElementById('searchInput').value;
-            searchStartTime = Date.now();
-            
-            const found = searchAlgorithm === 'bfs' ? bfs(searchTarget) : dfs(currentTree, searchTarget);
-            
-            const searchEndTime = Date.now();
-            document.getElementById('searchTime').textContent = searchEndTime - searchStartTime;
-            
-            if (found) {
-                const foundNode = document.querySelector(`.node-content:contains('${searchTarget}')`);
-                if (foundNode) foundNode.classList.add('found');
-                alert('Value found!');
-            } else {
-                alert('Value not found.');
-            }
-            
-
-        
-
-        let scale = 1;
-        const treeContainer = document.getElementById('tree');
-
-        treeContainer.addEventListener('mouseover', (e) => {
-            if (e.target.classList.contains('node-content')) {
-                e.target.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
-            }
-        });
-        
-        treeContainer.addEventListener('mouseout', (e) => {
-            if (e.target.classList.contains('node-content')) {
-                e.target.style.boxShadow = 'none';
-            }
-        });
- 
-        
-        // Update the generate tree button click event
-        document.getElementById('generateTreeBtn').addEventListener('click', () => {
-            currentTree = generateRandomTree();
-            createTree(currentTree);
-            allNodes = document.querySelectorAll('.node');
-            resetTree();
-        });
-        
-        // Initialize the tree
-        currentTree = generateRandomTree();
-        createTree(currentTree);
-        allNodes = document.querySelectorAll('.node');
-
-        function bruteForceStep() {
+        function bruteForceSearch() {
             if (currentNodeIndex >= allNodes.length - 1) {
                 clearInterval(searchInterval);
                 const searchEndTime = Date.now();
@@ -271,40 +215,22 @@
             document.querySelectorAll('.node-content').forEach(node => {
                 node.classList.remove('current', 'visited', 'found');
             });
-            resetStats();
+            nodesChecked = 0;
+            document.getElementById('nodesChecked').textContent = nodesChecked;
+            document.getElementById('searchTime').textContent = '0';
             currentNodeIndex = -1;
         }
 
-        
-        const tree = {
-            value: 'Root',
-            children: [
-                {
-                    value: 'A',
-                    children: [
-                        { value: 'A1' },
-                        { value: 'A2', children: [{ value: 'A2.1' }, { value: 'A2.2' }] }
-                    ]
-                },
-                {
-                    value: 'B',
-                    children: [
-                        { value: 'B1' },
-                        { value: 'B2' },
-                        { value: 'B3', children: [{ value: 'B3.1' }, { value: 'B3.2' }] }
-                    ]
-                }
-            ]
-        };
-
-        createTree(tree);
+        // Initialize the tree
+        currentTree = generateRandomTree();
+        createTree(currentTree);
         allNodes = document.querySelectorAll('.node');
 
         document.getElementById('searchBtn').addEventListener('click', () => {
             resetTree();
             searchTarget = document.getElementById('searchInput').value;
             searchStartTime = Date.now();
-            searchInterval = setInterval(bruteForceStep, searchSpeed);
+            searchInterval = setInterval(bruteForceSearch, searchSpeed);
         });
 
         document.getElementById('resetBtn').addEventListener('click', resetTree);
@@ -313,13 +239,13 @@
             searchSpeed = parseInt(e.target.value);
             if (searchInterval) {
                 clearInterval(searchInterval);
-                searchInterval = setInterval(bruteForceStep, searchSpeed);
+                searchInterval = setInterval(bruteForceSearch, searchSpeed);
             }
         });
 
         document.getElementById('stepBtn').addEventListener('click', () => {
             clearInterval(searchInterval);
-            bruteForceStep();
+            bruteForceSearch();
         });
     </script>
 </body>
