@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brute Force Tree Search Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
+        .current { fill: #ffcc00; }
+.visited { fill: #90ee90; }
+.found { fill: #ff6347; }
+.searched { stroke: #ff0000; }
         .connector {
     position: absolute;
     top: -20px;
@@ -155,239 +160,50 @@
         </div>
     </div>
 
-    <script>let currentTree;
-        let svg;
-        let simulation;
-        
-        function initializeTree() {
-            const treeContainer = document.getElementById('tree');
-            treeContainer.innerHTML = '';
-        
-            svg = d3.select(treeContainer)
-                .append("svg")
-                .attr("width", "100%")
-                .attr("height", "400")
-                .attr("id", "tree-svg");
-        
-            const depth = parseInt(document.getElementById('treeDepth').value);
-            currentTree = generateRandomTree(depth);
-            drawTree(currentTree);
-        }
-        
-        function generateRandomTree(depth = 3, maxChildren = 3) {
-            function generateNode(currentDepth) {
-                if (currentDepth === 0) {
-                    return { id: Math.random(), value: Math.floor(Math.random() * 100).toString() };
-                }
-                
-                const node = {
-                    id: Math.random(),
-                    value: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
-                    children: []
-                };
-                
-                const numChildren = Math.floor(Math.random() * maxChildren) + 1;
-                for (let i = 0; i < numChildren; i++) {
-                    node.children.push(generateNode(currentDepth - 1));
-                }
-                
-                return node;
-            }
-        
-            return generateNode(depth);
-        }
-        
-        function drawTree(tree) {
-            const nodes = d3.hierarchy(tree);
-            const links = nodes.links();
-        
-            const width = svg.node().getBoundingClientRect().width;
-            const height = 400;
-        
-            const treeLayout = d3.tree().size([width - 40, height - 40]);
-            treeLayout(nodes);
-        
-            simulation = d3.forceSimulation(nodes.descendants())
-                .force("link", d3.forceLink(links).id(d => d.id).distance(70))
-                .force("charge", d3.forceManyBody().strength(-500))
-                .force("center", d3.forceCenter(width / 2, height / 2))
-                .on("tick", ticked);
-        
-            const link = svg.append("g")
-                .selectAll("line")
-                .data(links)
-                .enter().append("line")
-                .attr("class", "link");
-        
-            const node = svg.append("g")
-                .selectAll("circle")
-                .data(nodes.descendants())
-                .enter().append("circle")
-                .attr("class", "node")
-                .attr("r", 20)
-                .attr("fill", d => d3.schemeCategory10[d.depth % 10])
-                .call(d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended));
-        
-            const label = svg.append("g")
-                .selectAll("text")
-                .data(nodes.descendants())
-                .enter().append("text")
-                .text(d => d.data.value)
-                .attr("text-anchor", "middle")
-                .attr("dy", ".35em");
-        
-            function ticked() {
-                link
-                    .attr("x1", d => d.source.x)
-                    .attr("y1", d => d.source.y)
-                    .attr("x2", d => d.target.x)
-                    .attr("y2", d => d.target.y);
-        
-                node
-                    .attr("cx", d => d.x)
-                    .attr("cy", d => d.y);
-        
-                label
-                    .attr("x", d => d.x)
-                    .attr("y", d => d.y);
-            }
-        
-            node.on("mouseover", highlightConnections)
-                .on("mouseout", resetHighlight);
-        }
-        
-        function dragstarted(event, d) {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x;
-            d.fy = d.y;
-        }
-        
-        function dragged(event, d) {
-            d.fx = event.x;
-            d.fy = event.y;
-        }
-        
-        function dragended(event, d) {
-            if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
-        }
-        
-        function highlightConnections(event, d) {
-            d3.selectAll(".link")
-                .style("stroke", l => (l.source === d || l.target === d) ? "#ff0000" : "#999")
-                .style("stroke-width", l => (l.source === d || l.target === d) ? 2 : 1);
-        
-            d3.selectAll(".node")
-                .style("opacity", n => (n === d || n.parent === d || d.parent === n) ? 1 : 0.3);
-        }
-        
-        function resetHighlight() {
-            d3.selectAll(".link")
-                .style("stroke", "#999")
-                .style("stroke-width", 1);
-        
-            d3.selectAll(".node")
-                .style("opacity", 1);
-        }
-        // ... (previous code remains the same)
+    <script>
 
+let currentTree;
+let svg;
 let isSearching = false;
 
-function bruteForceSearch(startNode, targetValue) {
-    const searchSteps = [];
-    const queue = [startNode];
-    const visited = new Set();
+function initializeTree() {
+    const treeContainer = document.getElementById('tree');
+    treeContainer.innerHTML = '';
 
-    while (queue.length > 0) {
-        const node = queue.shift();
-        if (!visited.has(node)) {
-            visited.add(node);
-            searchSteps.push({ type: 'visit', node: node });
+    svg = d3.select(treeContainer)
+        .append("svg")
+        .attr("width", "100%")
+        .attr("height", "400")
+        .attr("id", "tree-svg");
 
-            if (node.data.value === targetValue) {
-                searchSteps.push({ type: 'found', node: node });
-                return searchSteps;
-            }
-
-            if (node.children) {
-                node.children.forEach(child => {
-                    if (!visited.has(child)) {
-                        queue.push(child);
-                        searchSteps.push({ type: 'explore', source: node, target: child });
-                    }
-                });
-            }
-        }
-    }
-
-    return searchSteps;
+    const depth = parseInt(document.getElementById('treeDepth').value);
+    currentTree = generateRandomTree(depth);
+    drawTree(currentTree);
 }
 
-async function performSearch() {
-    isSearching = true;
-    resetSearch();
-
-    const targetValue = document.getElementById("searchNode").value;
-    const animationSpeed = parseInt(document.getElementById("animationSpeed").value);
-
-    const rootNode = d3.hierarchy(currentTree);
-    const searchSteps = bruteForceSearch(rootNode, targetValue);
-
-    if (searchSteps.length > 0 && searchSteps[searchSteps.length - 1].type === 'found') {
-        await animateSearch(searchSteps, animationSpeed);
-        console.log("Value found!");
-    } else {
-        console.log("Value not found");
-        alert("Value not found");
-    }
-
-    isSearching = false;
+function generateRandomTree(depth) {
+    const root = { value: Math.floor(Math.random() * 100), children: [] };
+    addChildren(root, depth - 1);
+    return root;
 }
 
-async function animateSearch(searchSteps, animationSpeed) {
-    for (const step of searchSteps) {
-        switch (step.type) {
-            case 'visit':
-                svg.selectAll(".node")
-                    .filter(d => d === step.node)
-                    .classed("current", true)
-                    .classed("visited", true);
-                break;
-            case 'explore':
-                svg.selectAll(".link")
-                    .filter(d => (d.source === step.source && d.target === step.target) ||
-                                 (d.source === step.target && d.target === step.source))
-                    .classed("searched", true);
-                break;
-            case 'found':
-                svg.selectAll(".node")
-                    .filter(d => d === step.node)
-                    .classed("found", true);
-                break;
-        }
-        await new Promise(resolve => setTimeout(resolve, animationSpeed));
-    }
+function updateStats(nodesChecked, searchTime) {
+    document.getElementById('nodesChecked').textContent = nodesChecked;
+    document.getElementById('searchTime').textContent = searchTime.toFixed(2);
 }
 
-function resetSearch() {
-    svg.selectAll(".node")
-        .classed("current", false)
-        .classed("visited", false)
-        .classed("found", false);
-    svg.selectAll(".link")
-        .classed("searched", false);
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
-
 
 document.getElementById('searchBtn').addEventListener('click', performSearch);
 document.getElementById('resetBtn').addEventListener('click', resetSearch);
 document.getElementById('generateTreeBtn').addEventListener('click', initializeTree);
-        
-        // Initialize the tree
-        initializeTree(); </script>
+document.getElementById('stepBtn').addEventListener('click', () => {
+
+});
+
+
+initializeTree();</script>
 </body>
 </html>
