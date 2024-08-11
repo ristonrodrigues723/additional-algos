@@ -198,116 +198,115 @@ button:hover {
         <svg id="graph" width="700" height="500"></svg>
     </div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script>
-    function createTree(tree) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("width", "100%");
-    svg.setAttribute("height", "400");
-    svg.setAttribute("id", "tree-svg");
-
-    const treeContainer = document.getElementById('tree');
-    treeContainer.innerHTML = '';
-    treeContainer.appendChild(svg);
-
-    drawTree(tree, svg);
-}
-
-function drawTree(tree, svg) {
-    if (!tree) return;
-
-    const nodeRadius = 20;
-    const levelHeight = 60;
-    const svgWidth = svg.clientWidth;
-    const svgHeight = 400;
-
-    function drawNode(node, x, y, level) {
-        if (!node) return;
-
-        const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        svg.appendChild(group);
-
-        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        circle.setAttribute("cx", x);
-        circle.setAttribute("cy", y);
-        circle.setAttribute("r", nodeRadius);
-        circle.setAttribute("fill", getRandomColor());
-        group.appendChild(circle);
-
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", x);
-        text.setAttribute("y", y + 5);
-        text.setAttribute("text-anchor", "middle");
-        text.setAttribute("fill", "white");
-        text.textContent = node.value;
-        group.appendChild(text);
-
-        if (node.children && node.children.length > 0) {
-            const childrenWidth = svgWidth / Math.pow(2, level + 1);
-            const startX = x - (childrenWidth * (node.children.length - 1) / 2);
-            
-            node.children.forEach((child, index) => {
-                const childX = startX + index * childrenWidth;
-                const childY = y + levelHeight;
+    <script>function createTree(tree) {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", "400");
+        svg.setAttribute("id", "tree-svg");
+    
+        const treeContainer = document.getElementById('tree');
+        treeContainer.innerHTML = '';
+        treeContainer.appendChild(svg);
+    
+        drawTree(tree, svg);
+    }
+    
+    function drawTree(tree, svg) {
+        if (!tree) return;
+    
+        const nodeRadius = 20;
+        const levelHeight = 60;
+        const svgWidth = svg.clientWidth;
+        const svgHeight = 400;
+    
+        function drawNode(node, x, y, level) {
+            if (!node) return;
+    
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            svg.appendChild(group);
+    
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", x);
+            circle.setAttribute("cy", y);
+            circle.setAttribute("r", nodeRadius);
+            circle.setAttribute("fill", getRandomColor());
+            group.appendChild(circle);
+    
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", x);
+            text.setAttribute("y", y + 5);
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("fill", "white");
+            text.textContent = node.value;
+            group.appendChild(text);
+    
+            if (node.children && node.children.length > 0) {
+                const childrenWidth = svgWidth / Math.pow(2, level + 1);
+                const startX = x - (childrenWidth * (node.children.length - 1) / 2);
                 
-                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                line.setAttribute("x1", x);
-                line.setAttribute("y1", y + nodeRadius);
-                line.setAttribute("x2", childX);
-                line.setAttribute("y2", childY - nodeRadius);
-                line.setAttribute("stroke", "black");
-                svg.insertBefore(line, group);
-
-                drawNode(child, childX, childY, level + 1);
-            });
+                node.children.forEach((child, index) => {
+                    const childX = startX + index * childrenWidth;
+                    const childY = y + levelHeight;
+                    
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", x);
+                    line.setAttribute("y1", y + nodeRadius);
+                    line.setAttribute("x2", childX);
+                    line.setAttribute("y2", childY - nodeRadius);
+                    line.setAttribute("stroke", "black");
+                    svg.insertBefore(line, group);
+    
+                    drawNode(child, childX, childY, level + 1);
+                });
+            }
         }
+    
+        drawNode(tree, svgWidth / 2, nodeRadius + 10, 0);
     }
-
-    drawNode(tree, svgWidth / 2, nodeRadius + 10, 0);
-}
-
-function getRandomColor() {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
-}
-
-function generateRandomTree(depth = 3, maxChildren = 3) {
-    function generateNode(currentDepth) {
-        if (currentDepth === 0) {
-            return { value: Math.floor(Math.random() * 100).toString() };
+    
+    function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
         }
-        
-        const node = {
-            value: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
-            children: []
-        };
-        
-        const numChildren = Math.floor(Math.random() * maxChildren) + 1;
-        for (let i = 0; i < numChildren; i++) {
-            node.children.push(generateNode(currentDepth - 1));
-        }
-        
-        return node;
+        return color;
     }
-
-    return generateNode(depth);
-}
-
-function initializeTree() {
-    const depth = parseInt(document.getElementById('treeDepth').value);
-    currentTree = generateRandomTree(depth);
-    createTree(currentTree);
-    allNodes = document.querySelectorAll('#tree-svg circle');
-    resetTree();
-}
-
-// Event listeners
-document.getElementById('generateTreeBtn').addEventListener('click', initializeTree);
-
-// Initialize the tree
-initializeTree(); </script>
+    
+    function generateRandomTree(depth = 3, maxChildren = 3) {
+        function generateNode(currentDepth) {
+            if (currentDepth === 0) {
+                return { value: Math.floor(Math.random() * 100).toString() };
+            }
+            
+            const node = {
+                value: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
+                children: []
+            };
+            
+            const numChildren = Math.floor(Math.random() * maxChildren) + 1;
+            for (let i = 0; i < numChildren; i++) {
+                node.children.push(generateNode(currentDepth - 1));
+            }
+            
+            return node;
+        }
+    
+        return generateNode(depth);
+    }
+    
+    function initializeTree() {
+        const depth = parseInt(document.getElementById('treeDepth').value);
+        currentTree = generateRandomTree(depth);
+        createTree(currentTree);
+        allNodes = document.querySelectorAll('#tree-svg circle');
+        resetTree();
+    }
+    
+    // Event listeners
+    document.getElementById('generateTreeBtn').addEventListener('click', initializeTree);
+    
+    // Initialize the tree
+    initializeTree(); </script>
 </body>
 </html>
