@@ -199,391 +199,115 @@ button:hover {
     </div>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
-        let nodes = [];
-        let links = [];
-        let nodeDraggingEnabled = true;
-        let isSearching = false;
+    function createTree(tree) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", "400");
+    svg.setAttribute("id", "tree-svg");
 
-        const svg = d3.select("#graph");
-        const width = +svg.attr("width");
-        const height = +svg.attr("height");
+    const treeContainer = document.getElementById('tree');
+    treeContainer.innerHTML = '';
+    treeContainer.appendChild(svg);
 
-        let simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(links).id(d => d.id))
-            .force("charge", d3.forceManyBody().strength(-200))
-            .force("center", d3.forceCenter(width / 2, height / 2));
+    drawTree(tree, svg);
+}
 
-        function generateRandomGraph() {
-            const nodeCount = parseInt(document.getElementById("nodeCount").value);
-            const linkProbability = 0.3;
+function drawTree(tree, svg) {
+    if (!tree) return;
 
-            nodes = Array.from({length: nodeCount}, (_, i) => ({id: i + 1, label: String.fromCharCode(65 + i)}));
-            links = [];
+    const nodeRadius = 20;
+    const levelHeight = 60;
+    const svgWidth = svg.clientWidth;
+    const svgHeight = 400;
 
-            for (let i = 0; i < nodes.length; i++) {
-                for (let j = i + 1; j < nodes.length; j++) {
-                    if (Math.random() < linkProbability) {
-                        links.push({source: nodes[i].id, target: nodes[j].id});
-                    }
-                }
-            }
+    function drawNode(node, x, y, level) {
+        if (!node) return;
 
-            updateGraph();
-        }
+        const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        svg.appendChild(group);
 
-        function updateGraph() {
-            svg.selectAll("*").remove();
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", x);
+        circle.setAttribute("cy", y);
+        circle.setAttribute("r", nodeRadius);
+        circle.setAttribute("fill", getRandomColor());
+        group.appendChild(circle);
 
-            const link = svg.append("g")
-                .selectAll("line")
-                .data(links)
-                .enter().append("line")
-                .attr("class", "link");
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", x);
+        text.setAttribute("y", y + 5);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("fill", "white");
+        text.textContent = node.value;
+        group.appendChild(text);
 
-            const node = svg.append("g")
-                .selectAll("circle")
-                .data(nodes)
-                .enter().append("circle")
-                .attr("class", "node")
-                .attr("r", 20)
-                .attr("fill", d => d3.schemeCategory10[d.id % 10])
-                .call(d3.drag()
-                    .on("start", dragstarted)
-                    .on("drag", dragged)
-                    .on("end", dragended));
+        if (node.children && node.children.length > 0) {
+            const childrenWidth = svgWidth / Math.pow(2, level + 1);
+            const startX = x - (childrenWidth * (node.children.length - 1) / 2);
+            
+            node.children.forEach((child, index) => {
+                const childX = startX + index * childrenWidth;
+                const childY = y + levelHeight;
+                
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", x);
+                line.setAttribute("y1", y + nodeRadius);
+                line.setAttribute("x2", childX);
+                line.setAttribute("y2", childY - nodeRadius);
+                line.setAttribute("stroke", "black");
+                svg.insertBefore(line, group);
 
-            const label = svg.append("g")
-                .selectAll("text")
-                .data(nodes)
-                .enter().append("text")
-                .text(d => d.label)
-                .attr("text-anchor", "middle")
-                .attr("dy", ".35em");
-
-            simulation.nodes(nodes);
-            simulation.force("link").links(links);
-            simulation.alpha(1).restart();
-
-            simulation.on("tick", () => {
-                link
-                    .attr("x1", d => d.source.x)
-                    .attr("y1", d => d.source.y)
-                    .attr("x2", d => d.target.x)
-                    .attr("y2", d => d.target.y);
-
-                node
-                    .attr("cx", d => d.x)
-                    .attr("cy", d => d.y);
-
-                label
-                    .attr("x", d => d.x)
-                    .attr("y", d => d.y);
+                drawNode(child, childX, childY, level + 1);
             });
-
-            node.on("mouseover", highlightConnections)
-                .on("mouseout", resetHighlight);
         }
-        function iterativeDfs(startNode, searchNode) {
-    const stack = [startNode];
-    const visited = new Set();
-    const searchSteps = [];
-    const parent = new Map();
+    }
 
-    while (stack.length > 0) {
-        const node = stack.pop();
+    drawNode(tree, svgWidth / 2, nodeRadius + 10, 0);
+}
+
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+function generateRandomTree(depth = 3, maxChildren = 3) {
+    function generateNode(currentDepth) {
+        if (currentDepth === 0) {
+            return { value: Math.floor(Math.random() * 100).toString() };
+        }
         
-        if (!visited.has(node)) {
-            visited.add(node);
-            searchSteps.push({type: 'visit', node: node});
-
-            if (node === searchNode) {
-                const path = [];
-                let current = node;
-                while (current !== startNode) {
-                    path.unshift(current);
-                    current = parent.get(current);
-                }
-                path.unshift(startNode);
-
-                for (let i = 0; i < path.length - 1; i++) {
-                    searchSteps.push({type: 'pathHighlight', source: path[i], target: path[i+1]});
-                }
-                return searchSteps;
-            }
-
-            const neighbors = links
-                .filter(l => l.source === node || l.target === node)
-                .map(l => l.source === node ? l.target : l.source);
-
-            for (const neighbor of neighbors.reverse()) {
-                if (!visited.has(neighbor)) {
-                    stack.push(neighbor);
-                    parent.set(neighbor, node);
-                    searchSteps.push({type: 'explore', source: node, target: neighbor});
-                }
-            }
-        } else {
-            searchSteps.push({type: 'backtrack', node: node});
+        const node = {
+            value: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
+            children: []
+        };
+        
+        const numChildren = Math.floor(Math.random() * maxChildren) + 1;
+        for (let i = 0; i < numChildren; i++) {
+            node.children.push(generateNode(currentDepth - 1));
         }
+        
+        return node;
     }
 
-    return null;
+    return generateNode(depth);
 }
 
-
-        function dragstarted(event, d) {
-            if (!nodeDraggingEnabled || isSearching) return;
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x;
-            d.fy = d.y;
-        }
-
-        function dragged(event, d) {
-            if (!nodeDraggingEnabled || isSearching) return;
-            d.fx = event.x;
-            d.fy = event.y;
-        }
-
-        function dragended(event, d) {
-            if (!nodeDraggingEnabled || isSearching) return;
-            if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
-        }
-
-        function toggleNodeDragging() {
-            nodeDraggingEnabled = !nodeDraggingEnabled;
-        }
-
-        function highlightConnections(event, d) {
-            if (isSearching) return;
-            d3.selectAll(".link")
-                .style("stroke", l => (l.source === d || l.target === d) ? "#ff0000" : "#999")
-                .style("stroke-width", l => (l.source === d || l.target === d) ? 2 : 1);
-
-            d3.selectAll(".node")
-                .style("opacity", n => (n === d || links.some(l => (l.source === d && l.target === n) || (l.target === d && l.source === n))) ? 1 : 0.3);
-        }
-
-        function resetHighlight() {
-            if (isSearching) return;
-            d3.selectAll(".link")
-                .style("stroke", "#999")
-                .style("stroke-width", 1);
-
-            d3.selectAll(".node")
-                .style("opacity", 1);
-        }
-
-
-        function iterativeBfs(startNode, searchNode) {
-    const queue = [startNode];
-    const visited = new Set([startNode]);
-    const searchSteps = [];
-    const parent = new Map();
-
-    while (queue.length > 0) {
-        const node = queue.shift();
-        searchSteps.push({type: 'visit', node: node});
-
-        if (node === searchNode) {
-            const path = [];
-            let current = node;
-            while (current !== startNode) {
-                path.unshift(current);
-                current = parent.get(current);
-            }
-            path.unshift(startNode);
-
-            for (let i = 0; i < path.length - 1; i++) {
-                searchSteps.push({type: 'pathHighlight', source: path[i], target: path[i+1]});
-            }
-            return searchSteps;
-        }
-
-        const neighbors = links
-            .filter(l => l.source === node || l.target === node)
-            .map(l => l.source === node ? l.target : l.source);
-
-        for (const neighbor of neighbors) {
-            if (!visited.has(neighbor)) {
-                visited.add(neighbor);
-                parent.set(neighbor, node);
-                queue.push(neighbor);
-                searchSteps.push({type: 'explore', source: node, target: neighbor});
-            }
-        }
-    }
-
-    return null;
-}        
-async function performSearch() {
-    isSearching = true;
-    simulation.stop();
-    resetSearch();
-
-    const startNodeLabel = document.getElementById("startNode").value.toUpperCase();
-    const searchNodeLabel = document.getElementById("searchNode").value.toUpperCase();
-    const searchMethod = document.getElementById("searchMethod").value;
-    const animationSpeed = parseInt(document.getElementById("animationSpeed").value);
-
-    const startNode = nodes.find(n => n.label === startNodeLabel);
-    const searchNode = nodes.find(n => n.label === searchNodeLabel);
-
-    if (!startNode || !searchNode) {
-        alert("Invalid start or search node");
-        isSearching = false;
-        return;
-    }
-
-    let searchSteps;
-    switch (searchMethod) {
-        case "dfs":
-            searchSteps = dfs(startNode, searchNode);
-            break;
-        case "iterativeDfs":
-            searchSteps = iterativeDfs(startNode, searchNode);
-            break;
-        case "bfs":
-            searchSteps = bfs(startNode, searchNode);
-            break;
-        case "iterativeBfs":
-            searchSteps = iterativeBfs(startNode, searchNode);
-            break;
-    }
-
-    if (searchSteps) {
-        console.log("Path found!");
-        await animateSearch(searchSteps, animationSpeed);
-    } else {
-        console.log("No path found");
-        alert("No path found");
-    }
-
-    isSearching = false;
+function initializeTree() {
+    const depth = parseInt(document.getElementById('treeDepth').value);
+    currentTree = generateRandomTree(depth);
+    createTree(currentTree);
+    allNodes = document.querySelectorAll('#tree-svg circle');
+    resetTree();
 }
 
+// Event listeners
+document.getElementById('generateTreeBtn').addEventListener('click', initializeTree);
 
-
-        function dfs(startNode, searchNode) {
-            const visited = new Set();
-            const searchSteps = [];
-
-            function dfsRecursive(node) {
-                visited.add(node);
-                searchSteps.push({type: 'visit', node: node});
-
-                if (node === searchNode) {
-                    return true;
-                }
-
-                const neighbors = links
-                    .filter(l => l.source === node || l.target === node)
-                    .map(l => l.source === node ? l.target : l.source);
-
-                for (const neighbor of neighbors) {
-                    if (!visited.has(neighbor)) {
-                        searchSteps.push({type: 'explore', source: node, target: neighbor});
-                        if (dfsRecursive(neighbor)) {
-                            return true;
-                        }
-                    }
-                }
-
-                searchSteps.push({type: 'backtrack', node: node});
-                return false;
-            }
-
-            const found = dfsRecursive(startNode);
-            return found ? searchSteps : null;
-        }
-
-        function bfs(startNode, searchNode) {
-            const queue = [startNode];
-            const visited = new Set([startNode]);
-            const searchSteps = [];
-            const parent = new Map();
-
-            while (queue.length > 0) {
-                const node = queue.shift();
-                searchSteps.push({type: 'visit', node: node});
-
-                if (node === searchNode) {
-                    const path = [];
-                    let current = node;
-                    while (current !== startNode) {
-                        path.unshift(current);
-                        current = parent.get(current);
-                    }
-                    path.unshift(startNode);
-
-                    for (let i = 0; i < path.length - 1; i++) {
-                        searchSteps.push({type: 'pathHighlight', source: path[i], target: path[i+1]});
-                    }
-                    return searchSteps;
-                }
-
-                const neighbors = links
-                    .filter(l => l.source === node || l.target === node)
-                    .map(l => l.source === node ? l.target : l.source);
-
-                for (const neighbor of neighbors) {
-                    if (!visited.has(neighbor)) {
-                        visited.add(neighbor);
-                        parent.set(neighbor, node);
-                        queue.push(neighbor);
-                        searchSteps.push({type: 'explore', source: node, target: neighbor});
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        async function animateSearch(searchSteps, animationSpeed) {
-            for (const step of searchSteps) {
-                switch (step.type) {
-                    case 'visit':
-                        svg.selectAll(".node")
-                            .filter(d => d === step.node)
-                            .classed("current", true)
-                            .classed("visited", true);
-                        break;
-                    case 'explore':
-                        svg.selectAll(".link")
-                            .filter(d => (d.source === step.source && d.target === step.target) ||
-                                         (d.source === step.target && d.target === step.source))
-                            .classed("searched", true);
-                        break;
-                    case 'backtrack':
-                        svg.selectAll(".node")
-                            .filter(d => d === step.node)
-                            .classed("current", false);
-                        break;
-                    case 'pathHighlight':
-                        svg.selectAll(".link")
-                            .filter(d => (d.source === step.source && d.target === step.target) ||
-                                         (d.source === step.target && d.target === step.source))
-                            .classed("searched", true)
-                            .style("stroke", "#00ff00")
-                            .style("stroke-width", 4);
-                        break;
-                }
-                await new Promise(resolve => setTimeout(resolve, animationSpeed));
-            }
-        }
-
-        function resetSearch() {
-            svg.selectAll(".node")
-                .classed("current", false)
-                .classed("visited", false);
-            svg.selectAll(".link")
-                .classed("searched", false)
-                .style("stroke", null)
-                .style("stroke-width", null);
-        }
-
-        generateRandomGraph();
-    </script>
+// Initialize the tree
+initializeTree(); </script>
 </body>
 </html>
