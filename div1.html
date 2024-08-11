@@ -168,8 +168,60 @@
         let searchSpeed = 500;
         let searchStartTime;
         let nodesChecked = 0;
-       
+        let currentSearchMethod = 'bruteForce';
+
+document.getElementById('toggleSearchBtn').addEventListener('click', () => {
+    currentSearchMethod = currentSearchMethod === 'bruteForce' ? 'depthFirst' : 'bruteForce';
+    alert(`Search method switched to ${currentSearchMethod === 'bruteForce' ? 'Brute Force' : 'Depth-First'}`);
+});
+
+document.getElementById('searchBtn').addEventListener('click', () => {
+    if (currentSearchMethod === 'bruteForce') {
+        resetTree();
+        searchTarget = document.getElementById('searchInput').value;
+        searchStartTime = Date.now();
+        searchInterval = setInterval(bruteForceSearch, searchSpeed);
+    } else {
+        startDepthFirstSearch();
+    }
+});
         function createNode(node) {
+    const nodeElement = document.createElement('div');
+    nodeElement.className = 'node';
+
+    const nodeContent = document.createElement('div');
+    nodeContent.className = 'node-content';
+    nodeContent.textContent = node.value;
+    nodeElement.appendChild(nodeContent);
+
+    if (node.children && node.children.length > 0) {
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'children';
+
+        const horizontalLine = document.createElement('div');
+        horizontalLine.className = 'horizontal-line';
+        childrenContainer.appendChild(horizontalLine);
+
+        node.children.forEach((child, index) => {
+            const childNode = createNode(child);
+            const connector = document.createElement('div');
+            connector.className = 'connector';
+            
+            if (index === 0) {
+                connector.classList.add('left');
+            } else if (index === node.children.length - 1) {
+                connector.classList.add('right');
+            }
+            
+            childNode.insertBefore(connector, childNode.firstChild);
+            childrenContainer.appendChild(childNode);
+        });
+
+        nodeElement.appendChild(childrenContainer);
+    }
+
+    return nodeElement;
+}
     const nodeElement = document.createElement('div');
     nodeElement.className = 'node';
 
@@ -202,6 +254,50 @@
     }
 
     return nodeElement;
+}
+function depthFirstSearch(node, target) {
+    const nodeContent = node.querySelector('.node-content');
+    nodeContent.classList.add('current');
+    nodesChecked++;
+    document.getElementById('nodesChecked').textContent = nodesChecked;
+
+    setTimeout(() => {
+        nodeContent.classList.remove('current');
+        nodeContent.classList.add('visited');
+
+        if (nodeContent.textContent === target) {
+            nodeContent.classList.add('found');
+            const searchEndTime = Date.now();
+            document.getElementById('searchTime').textContent = searchEndTime - searchStartTime;
+            alert('Value found!');
+            return true;
+        }
+
+        const children = node.querySelectorAll(':scope > .children > .node');
+        for (let child of children) {
+            if (depthFirstSearch(child, target)) {
+                return true;
+            }
+        }
+
+        return false;
+    }, searchSpeed);
+
+    return false;
+}
+
+function startDepthFirstSearch() {
+    resetTree();
+    searchTarget = document.getElementById('searchInput').value;
+    searchStartTime = Date.now();
+    const rootNode = document.querySelector('#tree > .node');
+    if (!depthFirstSearch(rootNode, searchTarget)) {
+        setTimeout(() => {
+            const searchEndTime = Date.now();
+            document.getElementById('searchTime').textContent = searchEndTime - searchStartTime;
+            alert('Search completed. Value not found.');
+        }, searchSpeed * allNodes.length);
+    }
 }
     function generateRandomTree(depth = 3, maxChildren = 3) {
         function generateNode(currentDepth) {
