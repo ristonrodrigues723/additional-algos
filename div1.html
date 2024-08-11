@@ -124,8 +124,75 @@
             `;
             return node;
         }
+        function createNode(value) {
+    const node = document.createElement('div');
+    node.className = 'node';
+    node.innerHTML = `
+        <div class="node-content">${value}</div>
+        <div class="connector"></div>
+        <div class="children"></div>
+    `;
+    return node;
+}
 
-        function createTree(root) {
+function createTree(root) {
+    const treeDiv = document.getElementById('tree');
+    treeDiv.innerHTML = ''; // Clear existing tree
+    
+    function buildTree(node) {
+        const nodeElement = createNode(node.value);
+        
+        if (node.children && node.children.length > 0) {
+            const childrenContainer = nodeElement.querySelector('.children');
+            for (const child of node.children) {
+                const childElement = buildTree(child);
+                childrenContainer.appendChild(childElement);
+            }
+        } else {
+            nodeElement.querySelector('.connector').style.display = 'none';
+        }
+
+        return nodeElement;
+    }
+
+    treeDiv.appendChild(buildTree(root));
+}
+
+function generateRandomTree(depth = 3, maxChildren = 3) {
+    function generateNode(currentDepth) {
+        if (currentDepth === 0) {
+            return { value: Math.floor(Math.random() * 100).toString() };
+        }
+        
+        const node = {
+            value: String.fromCharCode(65 + Math.floor(Math.random() * 26)),
+            children: []
+        };
+        
+        const numChildren = Math.floor(Math.random() * maxChildren) + 1;
+        for (let i = 0; i < numChildren; i++) {
+            node.children.push(generateNode(currentDepth - 1));
+        }
+        
+        return node;
+    }
+    
+    return generateNode(depth);
+}
+
+const randomTree = generateRandomTree();
+createTree(randomTree);
+
+
+allNodes = document.querySelectorAll('.node');
+
+document.getElementById('generateTreeBtn').addEventListener('click', () => {
+    const newRandomTree = generateRandomTree();
+    createTree(newRandomTree);
+    allNodes = document.querySelectorAll('.node');
+    resetTree();
+});
+
             const treeDiv = document.getElementById('tree');
             
             function buildTree(node) {
@@ -201,7 +268,7 @@
             currentNodeIndex = -1;
         }
 
-        // Example tree structure
+        
         const tree = {
             value: 'Root',
             children: [
