@@ -6,288 +6,347 @@
     <title>Brute Force Tree Search Visualization</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-    body {
-    font-family: "Poppins", sans-serif;
-    background-color: rgb(231, 231, 231);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-}
-
-.container {
-    width: 100%;
-    max-width: 1000px;
-    background-color: white;
-    box-shadow: 8px 8px 20px rgb(128, 128, 128);
-    border-radius: 20px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-}
-
-.heading {
-    color: #3498db;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-#tree-container {
-    width: 100%;
-    height: 400px;
-    border: 1px solid #ccc;
-    overflow: auto;
-}
-
-#tree-svg {
-    width: 100%;
-    height: 100%;
-    min-width: 600px;
-    min-height: 400px;
-}
-
-.node-circle {
-    fill: #3498db;
-    stroke: rgb(3, 3, 3);
-    stroke-width: 2;
-    transition: all 0.3s ease-in-out;
-}
-
-.node-text {
-    font-size: 14px;
-    text-anchor: middle;
-    dominant-baseline: central;
-    fill: white;
-    pointer-events: none;
-}
-
-.node-circle.visited {
-    fill: #4CAF50;
-    animation: pulse 0.5s ease-in-out;
-}
-
-.node-circle.current {
-    fill: #FFC107;
-    animation: shake 0.5s ease-in-out;
-}
-
-.node-circle.found {
-    fill: #E1BEE7;
-    animation: celebrate 0.5s ease-in-out;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-@keyframes shake {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(-3px); }
-    50% { transform: translateX(3px); }
-    75% { transform: translateX(-3px); }
-    100% { transform: translateX(0); }
-}
-
-@keyframes celebrate {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
-
-.controls {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-button, input {
-    height: 40px;
-    font-size: 16px;
-    padding: 0 15px;
-    border: none;
-    border-radius: 5px;
-    background-color: #3498db;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-button:hover {
-    background-color: #2980b9;
-}
-
-input[type="text"], input[type="number"] {
-    background-color: white;
-    color: #333;
-    border: 1px solid #3498db;
-}
-
-.stats {
-    margin-top: 20px;
-    text-align: center;
-}
-     </style>
+        body {
+            font-family: "Poppins", sans-serif;
+            background-color: rgb(231, 231, 231);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        nav {
+            background-color: #333;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: flex-start;
+        }
+        nav li {
+            flex-grow: 1;
+            text-align: center;
+        }
+        nav li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+        nav li a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        nav li a.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: white;
+            box-shadow: 8px 8px 20px rgb(128, 128, 128);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            margin: 80px auto 20px;
+        }
+        #tree-container {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ccc;
+            overflow: auto;
+        }
+        #tree-svg {
+            width: 100%;
+            height: 100%;
+            min-width: 600px;
+            min-height: 400px;
+        }
+        .node-circle {
+            fill: #3498db;
+            stroke: rgb(3, 3, 3);
+            stroke-width: 2;
+            transition: all 0.3s ease-in-out;
+        }
+        .node-text {
+            font-size: 14px;
+            text-anchor: middle;
+            dominant-baseline: central;
+            fill: white;
+            pointer-events: none;
+        }
+        .node-circle.visited {
+            fill: #4CAF50;
+            animation: pulse 0.5s ease-in-out;
+        }
+        .node-circle.current {
+            fill: #FFC107;
+            animation: shake 0.5s ease-in-out;
+        }
+        .node-circle.found {
+            fill: #E1BEE7;
+            animation: celebrate 0.5s ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            50% { transform: translateX(3px); }
+            75% { transform: translateX(-3px); }
+            100% { transform: translateX(0); }
+        }
+        @keyframes celebrate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button, input {
+            height: 40px;
+            font-size: 16px;
+            padding: 0 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        input[type="text"], input[type="number"] {
+            background-color: white;
+            color: #333;
+            border: 1px solid #3498db;
+        }
+        .stats {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .link {
+            fill: none;
+            stroke: #bdc3c7;
+            stroke-width: 2px;
+        }
+    </style>
 </head>
 <body>
+    <nav>
+        <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="s.html">Sudoku Solver</a></li>
+            <li><a href="graph2.html">Graph Traversal</a></li>
+            <li><a href="index.html">Binary Tree BFS</a></li>
+            <li><a href="dfs.html">Binary Tree DFS</a></li>
+            <li><a href="div1.html" class="active">Brute Force</a></li>
+            <li><a href="d.html">Divide and Conquer</a></li>
+        </ul>
+    </nav>
     <div class="container">
         <div class="controls">
             <input type="text" id="searchInput" placeholder="Enter search value">
             <button id="searchBtn">Search</button>
             <button id="resetBtn">Reset</button>
             <input type="range" id="speedSlider" min="100" max="2000" value="500">
-            <button id="stepBtn">Step</button>
-            <input type="number" id="treeDepth" value="3" min="1" max="5">
+            <input type="number" id="treeDepth" value="4" min="1" max="6">
             <button id="generateTreeBtn">Generate Tree</button>
         </div>
-        <div id="tree" class="tree"></div>
+        <div id="tree-container"></div>
         <div class="stats">
             <p>Nodes checked: <span id="nodesChecked">0</span></p>
             <p>Search time: <span id="searchTime">0</span> ms</p>
         </div>
     </div>
-
     <script>
-let currentTree;
-let svg;
-let isSearching = false;
-let nodesChecked = 0;
-let startTime;
+        // Tree visualization and search functionality
+        let root = null;
+        let svg;
+        let solver = null;
+        let isSearching = false;
+        let nodesChecked = 0;
+        let startTime;
 
+        function initializeTree() {
+            const treeContainer = document.getElementById('tree-container');
+            treeContainer.innerHTML = '';
 
-function initializeTree() {
-    const treeContainer = document.getElementById('tree');
-    treeContainer.innerHTML = '';
+            svg = d3.select(treeContainer)
+                .append("svg")
+                .attr("width", "100%")
+                .attr("height", "400")
+                .attr("id", "tree-svg");
 
-    svg = d3.select(treeContainer)
-        .append("svg")
-        .attr("width", "100%")
-        .attr("height", "400")
-        .attr("id", "tree-svg");
+            const depth = parseInt(document.getElementById('treeDepth').value);
+            root = generateRandomBinaryTree(depth);
+            drawTree(root);
+            resetStats();
+        }
 
-    const depth = parseInt(document.getElementById('treeDepth').value);
-    currentTree = generateRandomBinaryTree(depth);
-    drawTree(currentTree);
-}
+        function generateRandomBinaryTree(maxDepth) {
+            let nodeCount = 0;
+            function generateNode(depth) {
+                if (depth >= maxDepth || Math.random() < 0.3) return null;
+                nodeCount++;
+                return { 
+                    value: Math.floor(Math.random() * 20) + 1,
+                    left: generateNode(depth + 1),
+                    right: generateNode(depth + 1)
+                };
+            }
+            return generateNode(0);
+        }
 
-function generateRandomBinaryTree(depth) {
-    if (depth === 0) return null;
-    const root = { value: Math.floor(Math.random() * 100), left: null, right: null };
-    root.left = generateRandomBinaryTree(depth - 1);
-    root.right = generateRandomBinaryTree(depth - 1);
-    return root;
-}
+        function drawTree(root) {
+            svg.selectAll('*').remove();
 
-function drawTree(root) {
-    const treeLayout = d3.tree().size([300, 300]);
-    const rootNode = d3.hierarchy(root);
-    const treeData = treeLayout(rootNode);
+            const width = 800;
+            const height = 400;
 
-    const nodes = treeData.descendants();
-    const links = treeData.links();
+            const treeLayout = d3.tree().size([width, height - 40]);
+            const rootNode = d3.hierarchy(root);
+            const treeData = treeLayout(rootNode);
 
-    svg.selectAll('.link')
-        .data(links)
-        .enter()
-        .append('path')
-        .attr('class', 'link')
-        .attr('d', d3.linkVertical()
-            .x(d => d.x)
-            .y(d => d.y));
+            const g = svg.append('g')
+                .attr('transform', 'translate(0, 20)');
 
-    const node = svg.selectAll('.node')
-        .data(nodes)
-        .enter()
-        .append('g')
-        .attr('class', 'node')
-        .attr('transform', d => `translate(${d.x},${d.y})`);
+            const links = g.selectAll('.link')
+                .data(treeData.links())
+                .enter().append('path')
+                .attr('class', 'link')
+                .attr('d', d3.linkVertical()
+                    .x(d => d.x)
+                    .y(d => d.y));
 
-    node.append('circle')
-        .attr('r', 20)
-        .attr('class', 'node-content');
+            const nodes = g.selectAll('.node')
+                .data(treeData.descendants())
+                .enter().append('g')
+                .attr('class', 'node')
+                .attr('transform', d => `translate(${d.x},${d.y})`);
 
-    node.append('text')
-        .attr('dy', '0.35em')
-        .attr('text-anchor', 'middle')
-        .text(d => d.data.value);
-}
+            nodes.append('circle')
+                .attr('r', 20)
+                .attr('class', 'node-circle');
 
-async function performBruteForceSearch() {
-    if (isSearching) return;
-    isSearching = true;
-    const searchValue = parseInt(document.getElementById('searchInput').value);
-    nodesChecked = 0;
-    startTime = performance.now();
+            nodes.append('text')
+                .attr('dy', '0.35em')
+                .attr('class', 'node-text')
+                .text(d => d.data.value);
+        }
 
-    const result = await bruteForceSearch(currentTree, searchValue);
+        function* dfsSearchSolver(node, targetValue) {
+            if (!node) return false;
+            
+            const stack = [node];
+            const visited = new Set();
+            
+            while (stack.length > 0) {
+                const current = stack.pop();
+                
+                if (!visited.has(current)) {
+                    visited.add(current);
+                    nodesChecked++;
+                    yield { type: 'visit', node: current };
+                    
+                    if (current.value === targetValue) {
+                        yield { type: 'found', node: current };
+                        return true;
+                    }
+                    
+                    if (current.right) stack.push(current.right);
+                    if (current.left) stack.push(current.left);
+                }
+            }
+            
+            return false;
+        }
 
-    const endTime = performance.now();
-    updateStats(nodesChecked, endTime - startTime);
-    isSearching = false;
+        function solveStep() {
+            if (!solver || isSearching) return;
+            
+            isSearching = true;
+            const result = solver.next();
+            
+            if (result.done) {
+                document.getElementById('searchTime').textContent = (performance.now() - startTime).toFixed(2);
+                isSearching = false;
+                return;
+            }
+            
+            const { type, node } = result.value;
+            updateNodeStyle(node, type === 'visit' ? 'visited' : 'found');
+            
+            document.getElementById('nodesChecked').textContent = nodesChecked;
+            
+            if (isSearching) {
+                setTimeout(solveStep, getSearchSpeed());
+            }
+        }
 
-    if (result) {
-        console.log("Value found!");
-    } else {
-        console.log("Value not found in the tree.");
-    }
-}
+        function updateNodeStyle(node, className) {
+            svg.selectAll('.node-circle')
+                .filter(d => d.data === node)
+                .attr('class', `node-circle ${className}`);
+        }
 
-async function bruteForceSearch(node, searchValue) {
-    if (!node) return false;
+        function reset() {
+            svg.selectAll('.node-circle')
+                .attr('class', 'node-circle');
+            resetStats();
+            solver = null;
+            isSearching = false;
+        }
 
-    nodesChecked++;
-    updateNodeStyle(node, 'current');
-    await sleep(getSearchSpeed());
+        function resetStats() {
+            nodesChecked = 0;
+            document.getElementById('nodesChecked').textContent = '0';
+            document.getElementById('searchTime').textContent = '0';
+        }
 
-    if (node.value === searchValue) {
-        updateNodeStyle(node, 'found');
-        return true;
-    }
+        function searchValue() {
+            const targetValue = parseInt(document.getElementById('searchInput').value);
+            
+            if (isNaN(targetValue)) {
+                alert("Please enter a valid number.");
+                return;
+            }
+            
+            reset();
+            solver = dfsSearchSolver(root, targetValue);
+            startTime = performance.now();
+            solveStep();
+        }
 
-    updateNodeStyle(node, 'visited');
+        function getSearchSpeed() {
+            return parseInt(document.getElementById('speedSlider').value);
+        }
 
-    const leftResult = await bruteForceSearch(node.left, searchValue);
-    if (leftResult) return true;
+        // Event listeners
+        document.getElementById('generateTreeBtn').addEventListener('click', initializeTree);
+        document.getElementById('searchBtn').addEventListener('click', searchValue);
+        document.getElementById('resetBtn').addEventListener('click', reset);
 
-    const rightResult = await bruteForceSearch(node.right, searchValue);
-    if (rightResult) return true;
-
-    return false;
-}
-
-function updateNodeStyle(node, className) {
-    svg.selectAll('.node-content')
-        .filter(d => d.data === node)
-        .attr('class', `node-content ${className}`);
-}
-
-function resetSearch() {
-    svg.selectAll('.node-content')
-        .attr('class', 'node-content');
-    updateStats(0, 0);
-}
-
-function updateStats(nodesChecked, searchTime) {
-    document.getElementById('nodesChecked').textContent = nodesChecked;
-    document.getElementById('searchTime').textContent = searchTime.toFixed(2);
-}
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function getSearchSpeed() {
-    return parseInt(document.getElementById('speedSlider').value);
-}
-
-document.getElementById('searchBtn').addEventListener('click', performBruteForceSearch);
-document.getElementById('resetBtn').addEventListener('click', resetSearch);
-document.getElementById('generateTreeBtn').addEventListener('click', initializeTree);
-
-initializeTree();
+        // Initialize
+        initializeTree();
     </script>
 </body>
 </html>
