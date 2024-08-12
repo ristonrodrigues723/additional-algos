@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divide and Conquer Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        #array-container {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .array-element {
+            width: 30px;
+            margin: 0 2px;
+            background-color: #3498db;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            color: white;
+            font-size: 12px;
+        }
+        #controls {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Divide and Conquer Visualization</h1>
+    <div id="array-container"></div>
+    <div id="controls">
+        <button id="generate">Generate New Array</button>
+        <button id="sort">Sort Array</button>
+    </div>
+    <script>
+        const arrayContainer = document.getElementById('array-container');
+        const generateButton = document.getElementById('generate');
+        const sortButton = document.getElementById('sort');
+        let array = [];
+
+        function generateRandomArray(size = 20, max = 100) {
+            return Array.from({length: size}, () => Math.floor(Math.random() * max) + 1);
+        }
+
+        function displayArray(arr, start = 0, end = arr.length - 1, color = '#3498db') {
+            arrayContainer.innerHTML = '';
+            arr.forEach((value, index) => {
+                const element = document.createElement('div');
+                element.className = 'array-element';
+                element.style.height = `${value * 2}px`;
+                element.textContent = value;
+                if (index >= start && index <= end) {
+                    element.style.backgroundColor = color;
+                }
+                arrayContainer.appendChild(element);
+            });
+        }
+
+        async function mergeSort(arr, start = 0, end = arr.length - 1) {
+            if (start >= end) return;
+
+            const mid = Math.floor((start + end) / 2);
+            
+            // Visualize division
+            displayArray(arr, start, mid, '#e74c3c');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            displayArray(arr, mid + 1, end, '#2ecc71');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            await mergeSort(arr, start, mid);
+            await mergeSort(arr, mid + 1, end);
+            await merge(arr, start, mid, end);
+
+            // Visualize merged part
+            displayArray(arr, start, end, '#f39c12');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        async function merge(arr, start, mid, end) {
+            let left = arr.slice(start, mid + 1);
+            let right = arr.slice(mid + 1, end + 1);
+            let i = 0, j = 0, k = start;
+
+            while (i < left.length && j < right.length) {
+                if (left[i] <= right[j]) {
+                    arr[k] = left[i];
+                    i++;
+                } else {
+                    arr[k] = right[j];
+                    j++;
+                }
+                k++;
+                displayArray(arr);
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            while (i < left.length) {
+                arr[k] = left[i];
+                i++;
+                k++;
+                displayArray(arr);
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            while (j < right.length) {
+                arr[k] = right[j];
+                j++;
+                k++;
+                displayArray(arr);
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+
+        generateButton.addEventListener('click', () => {
+            array = generateRandomArray();
+            displayArray(array);
+        });
+
+        sortButton.addEventListener('click', async () => {
+            sortButton.disabled = true;
+            generateButton.disabled = true;
+            await mergeSort(array);
+            sortButton.disabled = false;
+            generateButton.disabled = false;
+        });
+
+        // Initial array generation
+        array = generateRandomArray();
+        displayArray(array);
+    </script>
+</body>
+</html>
