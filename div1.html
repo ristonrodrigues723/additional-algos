@@ -1,10 +1,11 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brute Force Tree Search Visualization</title>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <title>Binary Tree DFS Visualization</title>
     <style>
         body {
             font-family: "Poppins", sans-serif;
@@ -149,8 +150,8 @@
             stroke-width: 2px;
         }
     </style>
-</head>
-<body>
+    </head>
+    <body>
     <nav>
         <ul>
             <li><a href="#">Home</a></li>
@@ -162,191 +163,229 @@
             <li><a href="d.html">Divide and Conquer</a></li>
         </ul>
     </nav>
+   
+    
     <div class="container">
-        <div class="controls">
-            <input type="text" id="searchInput" placeholder="Enter search value">
-            <button id="searchBtn">Search</button>
-            <button id="resetBtn">Reset</button>
-            <input type="range" id="speedSlider" min="100" max="2000" value="500">
-            <input type="number" id="treeDepth" value="4" min="1" max="6">
-            <button id="generateTreeBtn">Generate Tree</button>
+        <header>
+            <h1 class="heading">Bruteforce Visualization</h1>
+        </header>
+        <div class="container-header">
+            <button id="generate-binary" class="push">Generate Random Binary Tree</button>
+            <button id="solve" class="pop">Solve Step-by-Step</button>
+            <button id="reset" class="reset">Reset</button>
         </div>
-        <div id="tree-container"></div>
-        <div class="stats">
-            <p>Nodes checked: <span id="nodesChecked">0</span></p>
-            <p>Search time: <span id="searchTime">0</span> ms</p>
+        <div class="container-body">
+            <div id="tree-container">
+                <svg id="tree-svg"></svg>
+            </div>
+            <div class="info">
+                <div class="sec2">
+                    <h3>Current Node:</h3>
+                    <button class="box" id="currentNodeDisplay"></button>
+                </div>
+                <div class="sec4">
+                    <h3>Tree Height:</h3>
+                    <button class="box" id="treeHeight"></button>
+                </div>
+                <div class="search-container">
+                    <input type="number" id="search-input" class="text" placeholder="Enter value to search">
+                    <button id="search-button" class="push">Search</button>
+                </div>
+                <div class="message-box">
+                    <h2>Status</h2>
+                    <div class="message" id="status"></div>
+                </div>
+            </div>
         </div>
     </div>
-    <script>
-        // Tree visualization and search functionality
+
+    <script> 
+        const treeContainer = document.getElementById('tree-container');
+        const generateBinaryButton = document.getElementById('generate-binary');
+        const solveButton = document.getElementById('solve');
+        const resetButton = document.getElementById('reset');
+        const statusElement = document.getElementById('status');
+        const searchButton = document.getElementById('search-button');
+        const searchInput = document.getElementById('search-input');
+        const currentNodeDisplay = document.getElementById('currentNodeDisplay');
+        const treeHeightDisplay = document.getElementById('treeHeight');
+
         let root = null;
-        let svg;
         let solver = null;
-        let isSearching = false;
-        let nodesChecked = 0;
-        let startTime;
 
-        function initializeTree() {
-            const treeContainer = document.getElementById('tree-container');
-            treeContainer.innerHTML = '';
-
-            svg = d3.select(treeContainer)
-                .append("svg")
-                .attr("width", "100%")
-                .attr("height", "400")
-                .attr("id", "tree-svg");
-
-            const depth = parseInt(document.getElementById('treeDepth').value);
-            root = generateRandomBinaryTree(depth);
-            drawTree(root);
-            resetStats();
-        }
-
-        function generateRandomBinaryTree(maxDepth) {
-            let nodeCount = 0;
-            function generateNode(depth) {
-                if (depth >= maxDepth || Math.random() < 0.3) return null;
-                nodeCount++;
-                return { 
-                    value: Math.floor(Math.random() * 20) + 1,
-                    left: generateNode(depth + 1),
-                    right: generateNode(depth + 1)
-                };
+        class TreeNode {
+            constructor(value, x, y) {
+                this.value = value;
+                this.left = null;
+                this.right = null;
+                this.x = x;
+                this.y = y;
             }
-            return generateNode(0);
         }
 
-        function drawTree(root) {
-            svg.selectAll('*').remove();
+        function generateRandomBinaryTree(maxDepth = 5, maxNodes = 20) {
+            const rootValue = Math.floor(Math.random() * 20) + 1;
+            root = new TreeNode(rootValue, 400, 30);
+            let nodeCount = 1;
 
-            const width = 800;
-            const height = 400;
+            function generateNode(node, depth, x, y) {
+                if (depth >= maxDepth || nodeCount >= maxNodes) return;
 
-            const treeLayout = d3.tree().size([width, height - 40]);
-            const rootNode = d3.hierarchy(root);
-            const treeData = treeLayout(rootNode);
+                const gap = 400 / Math.pow(2, depth);
 
-            const g = svg.append('g')
-                .attr('transform', 'translate(0, 20)');
+                if (Math.random() < 0.7 && nodeCount < maxNodes) {
+                    const leftValue = Math.floor(Math.random() * 20) + 1;
+                    node.left = new TreeNode(leftValue, x - gap, y + 60);
+                    nodeCount++;
+                    generateNode(node.left, depth + 1, x - gap, y + 60);
+                }
 
-            const links = g.selectAll('.link')
-                .data(treeData.links())
-                .enter().append('path')
-                .attr('class', 'link')
-                .attr('d', d3.linkVertical()
-                    .x(d => d.x)
-                    .y(d => d.y));
-
-            const nodes = g.selectAll('.node')
-                .data(treeData.descendants())
-                .enter().append('g')
-                .attr('class', 'node')
-                .attr('transform', d => `translate(${d.x},${d.y})`);
-
-            nodes.append('circle')
-                .attr('r', 20)
-                .attr('class', 'node-circle');
-
-            nodes.append('text')
-                .attr('dy', '0.35em')
-                .attr('class', 'node-text')
-                .text(d => d.data.value);
-        }
-
-        function* dfsSearchSolver(node, targetValue) {
-            if (!node) return false;
-            
-            const stack = [node];
-            const visited = new Set();
-            
-            while (stack.length > 0) {
-                const current = stack.pop();
-                
-                if (!visited.has(current)) {
-                    visited.add(current);
-                    nodesChecked++;
-                    yield { type: 'visit', node: current };
-                    
-                    if (current.value === targetValue) {
-                        yield { type: 'found', node: current };
-                        return true;
-                    }
-                    
-                    if (current.right) stack.push(current.right);
-                    if (current.left) stack.push(current.left);
+                if (Math.random() < 0.7 && nodeCount < maxNodes) {
+                    const rightValue = Math.floor(Math.random() * 20) + 1;
+                    node.right = new TreeNode(rightValue, x + gap, y + 60);
+                    nodeCount++;
+                    generateNode(node.right, depth + 1, x + gap, y + 60);
                 }
             }
+
+            generateNode(root, 1, 400, 30);
+            return root;
+        }
+
+        function createTreeVisualization(node) {
+            const svg = document.getElementById('tree-svg');
+            svg.innerHTML = '';
             
-            return false;
+            function createNodeElement(node) {
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", node.x);
+                circle.setAttribute("cy", node.y);
+                circle.setAttribute("r", 20);
+                circle.setAttribute("class", "node-circle");
+                
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", node.x);
+                text.setAttribute("y", node.y);
+                text.setAttribute("class", "node-text");
+                text.textContent = node.value;
+                
+                g.appendChild(circle);
+                g.appendChild(text);
+                svg.appendChild(g);
+
+                if (node.left) {
+                    createLink(node, node.left);
+                    createNodeElement(node.left);
+                }
+                if (node.right) {
+                    createLink(node, node.right);
+                    createNodeElement(node.right);
+                }
+            }
+
+            function createLink(parent, child) {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", parent.x);
+                line.setAttribute("y1", parent.y);
+                line.setAttribute("x2", child.x);
+                line.setAttribute("y2", child.y);
+                line.setAttribute("stroke", "black");
+                svg.appendChild(line);
+            }
+
+            createNodeElement(node);
+        }
+
+        function* bruteForceSearchSolver(node, targetValue) {
+    if (!node) return false;
+    
+    const queue = [node];
+    
+    while (queue.length > 0) {
+        const current = queue.shift();
+        
+        yield { type: 'visit', node: current };
+        
+        if (current.value === targetValue) {
+            yield { type: 'found', node: current };
+            return true;
+        }
+        
+        if (current.left) queue.push(current.left);
+        if (current.right) queue.push(current.right);
+    }
+    
+    return false;
+}
+        function generateNewBinaryTree() {
+            root = generateRandomBinaryTree();
+            createTreeVisualization(root);
+            updateTreeHeight();
+            statusElement.textContent = "New binary tree generated. Enter a value to search.";
         }
 
         function solveStep() {
-            if (!solver || isSearching) return;
+            if (!solver) return;
             
-            isSearching = true;
             const result = solver.next();
-            
             if (result.done) {
-                document.getElementById('searchTime').textContent = (performance.now() - startTime).toFixed(2);
-                isSearching = false;
+                statusElement.textContent = "Search completed. Value not found.";
                 return;
             }
             
             const { type, node } = result.value;
-            updateNodeStyle(node, type === 'visit' ? 'visited' : 'found');
+            const nodeElement = document.querySelector(`circle[cx="${node.x}"][cy="${node.y}"]`);
             
-            document.getElementById('nodesChecked').textContent = nodesChecked;
-            
-            if (isSearching) {
-                setTimeout(solveStep, getSearchSpeed());
+            if (type === 'visit') {
+                nodeElement.classList.add('visited');
+                currentNodeDisplay.textContent = node.value;
+                statusElement.textContent = `Visiting node with value ${node.value}`;
+            } else if (type === 'found') {
+                nodeElement.classList.add('found');
+                statusElement.textContent = `Value found! Node value: ${node.value}`;
+                solver = null;
             }
-        }
-
-        function updateNodeStyle(node, className) {
-            svg.selectAll('.node-circle')
-                .filter(d => d.data === node)
-                .attr('class', `node-circle ${className}`);
         }
 
         function reset() {
-            svg.selectAll('.node-circle')
-                .attr('class', 'node-circle');
-            resetStats();
+            const nodes = document.querySelectorAll('.node-circle');
+            nodes.forEach(node => {
+                node.classList.remove('visited', 'found');
+            });
+            currentNodeDisplay.textContent = '';
+            statusElement.textContent = "Tree reset. Enter a value to search.";
             solver = null;
-            isSearching = false;
-        }
-
-        function resetStats() {
-            nodesChecked = 0;
-            document.getElementById('nodesChecked').textContent = '0';
-            document.getElementById('searchTime').textContent = '0';
         }
 
         function searchValue() {
-            const targetValue = parseInt(document.getElementById('searchInput').value);
-            
-            if (isNaN(targetValue)) {
-                alert("Please enter a valid number.");
-                return;
+    const targetValue = parseInt(searchInput.value);
+    
+    if (isNaN(targetValue)) {
+        statusElement.textContent = "Please enter a valid number.";
+        return;
+    }
+    
+    reset();
+    solver = bruteForceSearchSolver(root, targetValue);
+    solveStep();
+}
+        function updateTreeHeight() {
+            function getHeight(node) {
+                if (!node) return 0;
+                return 1 + Math.max(getHeight(node.left), getHeight(node.right));
             }
-            
-            reset();
-            solver = dfsSearchSolver(root, targetValue);
-            startTime = performance.now();
-            solveStep();
+            const height = getHeight(root);
+            treeHeightDisplay.textContent = height;
         }
 
-        function getSearchSpeed() {
-            return parseInt(document.getElementById('speedSlider').value);
-        }
-
-        // Event listeners
-        document.getElementById('generateTreeBtn').addEventListener('click', initializeTree);
-        document.getElementById('searchBtn').addEventListener('click', searchValue);
-        document.getElementById('resetBtn').addEventListener('click', reset);
+        generateBinaryButton.addEventListener('click', generateNewBinaryTree);
+        solveButton.addEventListener('click', solveStep);
+        resetButton.addEventListener('click', reset);
+        searchButton.addEventListener('click', searchValue);
 
         // Initialize
-        initializeTree();
-    </script>
+        generateNewBinaryTree();
+   </script>
 </body>
 </html>
